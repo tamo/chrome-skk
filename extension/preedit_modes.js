@@ -22,9 +22,43 @@ function preeditKeybind(skk, keyevent) {
   }
 
   if (keyevent.key == 'Esc' || (keyevent.key == 'g' && keyevent.ctrlKey)) {
+    if (skk.tabbing) {
+      skk.preedit = skk.oldPreedit;
+      skk.roman = skk.oldRoman;
+      skk.caret = skk.preedit.length;
+      skk.entries = null;
+      skk.updateCandidates();
+      skk.tabbing = null;
+      return true;
+    }
     skk.preedit = '';
     skk.roman = '';
     skk.switchMode('hiragana');
+    return true;
+  }
+
+  if (keyevent.key == 'Tab' || (keyevent.key == 't' && keyevent.ctrlKey)) {
+    if (!skk.tabbing) {
+      skk.tabbing = 'user';
+      skk.oldPreedit = skk.preedit;
+      skk.oldRoman = skk.roman;
+    }
+    if (skk.entries) {
+      skk.entries.index++;
+    }
+    if (!skk.entries || skk.entries.index >= skk.entries.entries.length) {
+      skk.preedit = skk.oldPreedit;
+      skk.roman = skk.oldRoman;
+      skk.caret = skk.preedit.length;
+      skk.systemComplete();
+      if (!skk.entries) {
+        skk.userComplete();
+        return true;
+      }
+    }
+    skk.preedit = skk.entries.entries[skk.entries.index].word;
+    skk.roman = '';
+    skk.caret = skk.preedit.length;
     return true;
   }
 
@@ -32,6 +66,7 @@ function preeditKeybind(skk, keyevent) {
     if (skk.caret > 0) {
       skk.caret--;
     }
+    skk.tabbing = null;
     return true;
   }
 
@@ -39,16 +74,19 @@ function preeditKeybind(skk, keyevent) {
     if (skk.caret < skk.preedit.length) {
       skk.caret++;
     }
+    skk.tabbing = null;
     return true;
   }
 
-  if (keyevent.key == 'Backspace') {
+  if (keyevent.key == 'Backspace' || (keyevent.key == 'h' && keyevent.ctrlKey)) {
     if (skk.roman.length > 0) {
       skk.roman = skk.roman.slice(0, skk.roman.length - 1);
+      skk.userComplete();
     } else if (skk.preedit.length > 0 && skk.caret > 0) {
       skk.preedit = skk.preedit.slice(0, skk.caret - 1) +
         skk.preedit.slice(skk.caret);
       skk.caret--;
+      skk.userComplete();
     } else {
       if (skk.preedit.length > 0) {
         skk.commitText(skk.preedit);
@@ -139,11 +177,14 @@ function preeditInput(skk, keyevent) {
     skk.roman = '';
     skk.preedit += '>';
     skk.switchMode('conversion');
-  } else if (!processed) {
-    console.log(keyevent);
-    skk.preedit = skk.preedit.slice(0, skk.caret) +
-      keyevent.key + skk.preedit.slice(skk.caret);
-    skk.caret += keyevent.key.length;
+  } else {
+    if (!processed) {
+      console.log(keyevent);
+      skk.preedit = skk.preedit.slice(0, skk.caret) +
+        keyevent.key + skk.preedit.slice(skk.caret);
+      skk.caret += keyevent.key.length;
+    }
+    skk.userComplete();
   }
   return true;
 }
@@ -176,7 +217,11 @@ function okuriPreeditInput(skk, keyevent) {
     return true;
   }
 
-  if (keyevent.key == 'Backspace') {
+  if (keyevent.key == 'Tab' || (keyevent.key == 't' && keyevent.ctrlKey)) {
+    return true;
+  }
+
+  if (keyevent.key == 'Backspace' || (keyevent.key == 'h' && keyevent.ctrlKey)) {
     skk.roman = skk.roman.slice(0, skk.roman.length - 1);
     if (skk.roman.length == 0) {
       skk.okuriPrefix = '';
