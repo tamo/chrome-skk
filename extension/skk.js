@@ -52,7 +52,8 @@ SKK.prototype.updateCandidates = function() {
       engineID:this.engineID,
       properties:{
         visible:false
-      }});
+      }
+    }).catch((e) => console.log(e));
     return;
   }
 
@@ -94,7 +95,7 @@ SKK.prototype.updateCandidates = function() {
         auxiliaryText:this.entries.text,
         auxiliaryTextVisible:!!this.entries.text
       }
-    })
+    }).catch((e) => console.log(e));
   ).then(() =>
     chrome.input.ime.setCursorPosition({
       contextID:this.context, candidateID:this.entries.index
@@ -447,7 +448,7 @@ SKK.prototype.showStatus = function() {
         pageSize:1,
         auxiliaryTextVisible:false
       }
-    })
+    }).catch((e) => console.log(e));
   ).then(() => {
     clearTimeout(this.timeout);
     this.timeout = setTimeout(() => {
@@ -458,7 +459,7 @@ SKK.prototype.showStatus = function() {
           properties:{
             visible:false
           }
-        });
+        }).catch((e) => console.log(e));
       }
     }, 2500);
   }).catch((e) => console.log(e));
