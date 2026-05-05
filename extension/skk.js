@@ -94,7 +94,7 @@ SKK.prototype.updateCandidates = function() {
         auxiliaryText:this.entries.text,
         auxiliaryTextVisible:!!this.entries.text
       }
-    }).catch((e) => console.log(e));
+    }).catch((e) => console.log(e))
   ).then(() =>
     chrome.input.ime.setCursorPosition({
       contextID:this.context, candidateID:this.entries.index
@@ -462,7 +462,7 @@ SKK.prototype.showStatus = function() {
         pageSize:1,
         auxiliaryTextVisible:false
       }
-    }).catch((e) => console.log(e));
+    }).catch((e) => console.log(e))
   ).then(() => {
     chrome.input.ime.setCursorPosition({
       contextID:this.context, candidateID:0
