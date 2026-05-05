@@ -285,6 +285,7 @@ SKK.registerImplicitMode('ascii-preedit', {
   compositionHandler: updateComposition,
   initHandler: initPreedit
 });
+})();
 
 function kanaTurnOver(str) {
   var turnedOverStr = '';
@@ -300,4 +301,3 @@ function kanaTurnOver(str) {
   }
   return turnedOverStr;
 }
-})();

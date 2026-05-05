@@ -88,8 +88,12 @@ function conversionMode(skk, keyevent) {
       skk.entries.index += 'asdfjkl'.indexOf(keyevent.key);
       is_commit_key = true;
     }
-    var entry = skk.entries.entries[skk.entries.index];
-    skk.commitText(entry.word + skk.okuriText);
+    const entry = skk.entries.entries[skk.entries.index];
+    const hiragana = entry.word + skk.okuriText;
+    const text = skk.previousKana == 'hiragana' ? hiragana :
+      skk.previousKana == 'katakana' ? kanaTurnOver(hiragana) :
+      kanaHalfWidth(kanaTurnOver(hiragana));
+    skk.commitText(text);
     skk.recordNewResult({...entry, word:entry.rawWord, rawWord:undefined});
     skk.clearComposition();
     skk.entries = null;
