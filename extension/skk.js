@@ -2,6 +2,7 @@ function SKK(engineID, dictionary) {
   this.engineID = engineID;
   this.context = null;
   this.currentMode = 'hiragana';
+  this.previousKana = 'hiragana';
   this.previousMode = null;
   this.roman = '';
   this.preedit = '';
@@ -212,7 +213,7 @@ SKK.registerImplicitMode = function(modeName, mode) {
   SKK.prototype.modes[modeName] = mode;
 };
 
-SKK.prototype.switchMode = function(newMode) {
+SKK.prototype.switchMode = function(newMode, isInner = false) {
   this.entries = null;
   this.oldPreedit = '';
   this.oldRoman = '';
@@ -223,7 +224,7 @@ SKK.prototype.switchMode = function(newMode) {
   }
 
   if (this.inner_skk) {
-    this.inner_skk.switchMode(newMode);
+    this.inner_skk.switchMode(newMode, true);
     return;
   }
 
@@ -236,7 +237,9 @@ SKK.prototype.switchMode = function(newMode) {
   }
 
   if (this.primaryModes.indexOf(this.previousMode) >= 0) {
-    this.previousKana = this.previousMode;
+    if (!isInner) {
+      this.previousKana = this.previousMode;
+    }
 
     if (this.primaryModes.indexOf(this.currentMode) >= 0) {
       const items = [];
