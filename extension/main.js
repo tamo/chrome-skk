@@ -19,19 +19,24 @@ chrome.input.ime.onActivate.addListener(function(engineID) {
   chrome.input.ime.setMenuItems({engineID:engineID, items:menus});
 });
 
-chrome.input.ime.onFocus.addListener(function(context) {
+function updateContext(needsStatus, context) {
   (function setContext(outer, context) {
     if (!outer) {
       return true;
     }
     outer.context = context.contextID;
     outer.private = !context.shouldDoLearning;
-    if (setContext(outer.inner_skk, context)) {
+
+    const isInnermost = setContext(outer.inner_skk, context);
+    if (isInnermost && needsStatus) {
       outer.showStatus();
     }
     return false;
   })(skk, context);
-});
+}
+
+chrome.input.ime.onFocus.addListener(updateContext.bind(null, true));
+chrome.input.ime.onInputContextUpdate.addListener(updateContext.bind(null, false));
 
 chrome.input.ime.onKeyEvent.addListener(function(engineID, keyData) {
   if (keyData.type != 'keydown') {
