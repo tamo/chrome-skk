@@ -71,7 +71,6 @@ function createRomanInput(table) {
         return true;
       }
     } else if (keyevent.key == 'Q') {
-      console.log('here');
       skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));
       skk.switchMode('preedit');
       return true;
@@ -79,8 +78,7 @@ function createRomanInput(table) {
       skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));
       skk.switchMode('full-ascii');
       return true;
-    } else if (keyevent.shiftKey &&
-               keyevent.key >= 'A' && keyevent.key <= 'Z') {
+    } else if (keyevent.key >= 'A' && keyevent.key <= 'Z') {
       skk.switchMode('preedit');
       skk.processRoman(
         keyevent.key.toLowerCase(), romanTable, function(text) {
@@ -88,6 +86,7 @@ function createRomanInput(table) {
             text + skk.preedit.slice(skk.caret);
           skk.caret += text.length;
         });
+      skk.userComplete();
       return true;
     } else if (keyevent.key == '!' || keyevent.key == '?') {
       skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));
