@@ -11,8 +11,7 @@ function createRomanInput(table) {
   return function (skk, keyevent) {
     if (keyevent.key == 'Enter') {
       if (skk.roman == 'n') {
-        const table = (skk.currentMode == 'hiragana') ? romanTable : katakanaTable;
-        skk.commitText(table['nn']);
+        skk.commitText(skk.currentMode.table['nn']);
       } else if (skk.roman.length > 0) {
         skk.commitText('');
       }
@@ -32,6 +31,14 @@ function createRomanInput(table) {
     }
 
     if (keyevent.key == 'j' && keyevent.ctrlKey) {
+      if (skk.currentMode != 'hiragana') {
+        skk.switchMode('hiragana');
+      }
+      return true;
+    }
+    if (keyevent.key == 'q' && keyevent.ctrlKey) {
+      skk.switchMode(
+        (skk.currentMode == 'hankana') ? 'hiragana' : 'hankata');
       return true;
     }
 
@@ -97,12 +104,21 @@ function createRomanInput(table) {
 SKK.registerMode('hiragana', {
   displayName: '\u3072\u3089\u304c\u306a',
   keyHandler: createRomanInput(romanTable),
+  table: romanTable,
   compositionHandler: updateComposition
 });
 
 SKK.registerMode('katakana', {
   displayName: '\u30ab\u30bf\u30ab\u30ca',
   keyHandler: createRomanInput(katakanaTable),
+  table: katakanaTable,
+  compositionHandler: updateComposition
+});
+
+SKK.registerMode('hankata', {
+  displayName: '\u534a\u89d2\uff76\uff80\uff76\uff85',
+  keyHandler: createRomanInput(hankataTable),
+  table: hankataTable,
   compositionHandler: updateComposition
 });
 })();

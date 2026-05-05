@@ -56,6 +56,7 @@ var romanTable = {
 };
 
 var katakanaTable = {};
+var hankataTable = {};
 
 (function() {
 function initRomanTable() {
@@ -98,8 +99,63 @@ function initRomanTable() {
       }
     }
     katakanaTable[key] = katakana;
+    hankataTable[key] = kanaHalfWidth(katakana);
   }
 }
 
 initRomanTable();
 })();
+
+function kanaHalfWidth(str) {
+  let halfWidthStr = '';
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    halfWidthStr += String.fromCharCode(...(halfWidthCodes(c)));
+  }
+  return halfWidthStr;
+}
+
+function halfWidthCodes(c) {
+  if (0x3000 == c) return [0x0020]; // スペース
+  else if (0x3001 == c) return [0xff64]; // 、
+  else if (0x3002 == c) return [0xff61]; // 。
+  else if (0x300c == c) return [0xff62]; // ｢
+  else if (0x300d == c) return [0xff63]; // ｣
+  else if (0x30a1 <= c && c < 0x30ab) { // ァア
+    const isLarge = 1 - (c % 2);
+    return [c + 0xcec6 - (c - 0x30a1) / 2 + isLarge * 9.5];
+  }
+  else if (0x30ab <= c && c < 0x30c3) { // カガ
+    const isDakuon = 1 - (c % 2);
+    const result = [c + 0xcecb - (c - 0x30ab + isDakuon) / 2];
+    if (isDakuon) result.push(0xff9e);
+    return result;
+  }
+  else if (0x30c3 == c) return [0xff6f]; // ッ
+  else if (0x30c4 <= c && c < 0x30ca) { // ツヅ
+    const isDakuon = c % 2;
+    const result = [c + 0xcebe - (c - 0x30c4 + isDakuon) / 2];
+    if (isDakuon) result.push(0xff9e);
+    return result;
+  }
+  else if (0x30ca <= c && c < 0x30cf) return [c + 0xcebb]; // ナ
+  else if (0x30cf <= c && c < 0x30de) { // ハバパ
+    const isDakuon = c % 3;
+    const result = [c + 0xcebb - 2 * Math.trunc((c - 0x30cf) / 3) - isDakuon];
+    if (isDakuon) result.push(0xff9d + isDakuon);
+    return result;
+  }
+  else if (0x30de <= c && c < 0x30e3) return [c + 0xceb1]; // マ
+  else if (0x30e3 <= c && c < 0x30e9) { // ャヤ
+    const isLarge = 1 - (c % 2);
+    return [c + 0xce89 - (c - 0x30e3) / 2 + isLarge * 39.5];
+  }
+  else if (0x30e9 <= c && c < 0x30ef) return [c + 0xceae]; // ラ
+  else if (0x30ef == c) return [0xff9c]; // ワ
+  else if (0x30f2 == c) return [0xff66]; // ヲ
+  else if (0x30f3 == c) return [0xff9d]; // ン
+  else if (0x30f4 == c) return [0xff73, 0xff9e]; // ヴ
+  else if (0x30fb == c) return [0xff61]; // ・
+  else if (0x30fc == c) return [0xff70]; // ー
+  return [c];
+}
