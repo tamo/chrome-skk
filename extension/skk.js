@@ -247,20 +247,25 @@ SKK.prototype.switchMode = function(newMode) {
     initHandler(this);
   }
 
-  if (this.primaryModes.indexOf(this.previousMode) >= 0 &&
-      this.primaryModes.indexOf(this.currentMode) >= 0) {
-    chrome.input.ime.updateMenuItems({
-      engineID:this.engineID,
-      items:[
-        {id:'skk-' + this.previousMode,
-         label:this.modes[this.previousMode].displayName,
-         style:'radio',
-         checked:false},
-        {id:'skk-' + this.currentMode,
-         label:this.modes[this.currentMode].displayName,
-         style:'radio',
-         checked:true}
-      ]});
+  if (this.primaryModes.indexOf(this.previousMode) >= 0) {
+    this.previousKana = this.previousMode;
+
+    if (this.primaryModes.indexOf(this.currentMode) >= 0) {
+      const items = [];
+      for (var i = 0; i <this.primaryModes.length; i++) {
+        var modeName = this.primaryModes[i];
+        items.push({id:'skk-' + modeName,
+          label:this.modes[modeName].displayName,
+          style:'radio',
+          checked:(modeName == this.currentMode),
+        });
+      }
+
+      chrome.input.ime.updateMenuItems({
+        engineID:this.engineID,
+        items,
+      });
+    }
   }
 };
 
@@ -428,7 +433,7 @@ SKK.prototype.finishInner = function(successfully) {
     this.preedit = '';
     this.okuriText = '';
     this.okuriPrefix = '';
-    this.switchMode('hiragana');
+    this.switchMode(this.previousKana);
   } else {
     if (this.previousMode != 'conversion') {
       this.entries = null;

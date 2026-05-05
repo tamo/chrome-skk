@@ -100,7 +100,7 @@ function conversionMode(skk, keyevent) {
       skk.switchMode('preedit');
     } else {
       skk.preedit = '';
-      skk.switchMode('hiragana');
+      skk.switchMode(skk.previousKana);
       if (!is_commit_key) {
         return skk.handleKeyEvent(keyevent);
       }

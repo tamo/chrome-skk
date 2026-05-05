@@ -17,7 +17,7 @@ function preeditKeybind(skk, keyevent) {
     skk.commitText(skk.preedit + nn);
     skk.preedit = '';
     skk.roman = '';
-    skk.switchMode('hiragana');
+    skk.switchMode(skk.previousKana);
     return true;
   }
 
@@ -31,7 +31,7 @@ function preeditKeybind(skk, keyevent) {
     }
     skk.preedit = '';
     skk.roman = '';
-    skk.switchMode('hiragana');
+    skk.switchMode(skk.previousKana);
     return true;
   }
 
@@ -101,16 +101,17 @@ function preeditKeybind(skk, keyevent) {
         skk.commitText(skk.preedit);
       }
       skk.preedit = '';
-      skk.switchMode('hiragana');
+      skk.switchMode(skk.previousKana);
     }
     return true;
   }
 
   if (keyevent.key == 'q' && skk.currentMode != 'ascii-preedit') {
-    skk.commitText(kanaTurnOver(skk.preedit + nn));
+    const kana = kanaTurnOver(skk.preedit + nn);
+    skk.commitText((keyevent.ctrlKey ? kanaHalfWidth : (c) => c)(kana));
     skk.preedit = '';
     skk.roman = '';
-    skk.switchMode('hiragana');
+    skk.switchMode(skk.previousKana);
     return true;
   }
 
@@ -213,7 +214,7 @@ function okuriPreeditInput(skk, keyevent) {
       skk.commitText(romanTable['nn']);
     }
     skk.roman = '';
-    skk.switchMode('hiragana');
+    skk.switchMode(skk.previousKana);
     return true;
   }
 
@@ -222,7 +223,7 @@ function okuriPreeditInput(skk, keyevent) {
     skk.roman = '';
     skk.okuriPrefix = '';
     skk.okuriText = '';
-    skk.switchMode('hiragana');
+    skk.switchMode(skk.previousKana);
     return true;
   }
 
