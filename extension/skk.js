@@ -6,6 +6,7 @@ function SKK(engineID, dictionary) {
   this.previousMode = null;
   this.roman = '';
   this.preedit = '';
+  this.hint = '';
   this.oldRoman = '';
   this.oldPreedit = '';
   this.tabbing = null;
@@ -433,6 +434,8 @@ SKK.prototype.finishInner = function(successfully) {
       this.preedit += this.okuriText;
       this.previousMode = 'preedit';
     }
+    this.preedit += this.hint ? ';' + this.hint : '';
+    this.hint = '';
     this.okuriText = '';
     this.okuriPrefix = '';
     this.switchMode(this.previousMode);

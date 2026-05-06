@@ -139,6 +139,13 @@ function preeditInput(skk, keyevent) {
     if (skk.roman == 'n') {
       skk.preedit += romanTable['nn'];
     }
+    const semicolon = skk.preedit.indexOf(';');
+    if (semicolon > 0) {
+      skk.hint = skk.preedit.slice(semicolon + 1);
+      skk.preedit = skk.preedit.slice(0, semicolon);
+    } else {
+      skk.hint = '';
+    }
     skk.roman = '';
     skk.switchMode('conversion');
     return true;
@@ -162,6 +169,7 @@ function preeditInput(skk, keyevent) {
           skk.preedit += text;
           skk.caret += text.length;
         } else {
+          skk.hint = '';
           skk.okuriPrefix = okuriPrefix;
           skk.okuriText = text;
           skk.switchMode('conversion');
@@ -186,6 +194,7 @@ function preeditInput(skk, keyevent) {
   if (skk.preedit.length > 0 && keyevent.key == '>') {
     skk.roman = '';
     skk.preedit += '>';
+    skk.hint = '';
     skk.switchMode('conversion');
   } else {
     if (!processed) {
@@ -244,6 +253,7 @@ function okuriPreeditInput(skk, keyevent) {
   skk.processRoman(keyevent.key.toLowerCase(), romanTable, function(text) {
     skk.okuriText += text;
     if (skk.roman.length == 0) {
+      skk.hint = '';
       skk.switchMode('conversion');
     }
   });
@@ -252,6 +262,7 @@ function okuriPreeditInput(skk, keyevent) {
 
 function asciiPreeditInput(skk, keyevent) {
   if (keyevent.key == ' ') {
+    skk.hint = '';
     skk.switchMode('conversion');
     return true;
   }

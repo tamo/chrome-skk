@@ -15,14 +15,8 @@ function updateComposition(skk) {
 }
 
 function initConversion(skk) {
-  let hint = '';
-  const semicolon = skk.preedit.indexOf(';');
-  if (semicolon > 0) {
-    hint = skk.preedit.slice(semicolon + 1);
-    skk.preedit = skk.preedit.slice(0, semicolon);
-  }
   skk.lookup(skk.preedit + skk.okuriPrefix, function(found) {
-    const entries = hint ? skk.narrowDown(found, hint) : found;
+    const entries = skk.hint ? skk.narrowDown(found, skk.hint) : found;
     if (entries?.length) {
       skk.entries = {
         index:0,
@@ -55,7 +49,7 @@ function conversionMode(skk, keyevent) {
     }
     if (skk.entries.index < 0) {
       skk.entries = null;
-      skk.preedit += skk.okuriText;
+      skk.preedit += skk.hint ? ';' + skk.hint : skk.okuriText;
       skk.okuriText = '';
       skk.okuriPrefix = '';
       skk.switchMode('preedit');
@@ -63,7 +57,7 @@ function conversionMode(skk, keyevent) {
   } else if (keyevent.key == 'Esc' ||
              (keyevent.key == 'g' && keyevent.ctrlKey)) {
     skk.entries = null;
-    skk.preedit += skk.okuriText;
+    skk.preedit += skk.hint ? ';' + skk.hint : skk.okuriText;
     skk.okuriText = '';
     skk.okuriPrefix = '';
     skk.switchMode('preedit');
@@ -76,7 +70,7 @@ function conversionMode(skk, keyevent) {
       entry.rawWord
     );
     skk.entries = null;
-    skk.preedit += skk.okuriText;
+    skk.preedit += skk.hint ? ';' + skk.hint : skk.okuriText;
     skk.okuriText = '';
     skk.okuriPrefix = '';
     skk.switchMode('preedit');
@@ -105,6 +99,7 @@ function conversionMode(skk, keyevent) {
       skk.switchMode('preedit');
     } else {
       skk.preedit = '';
+      skk.hint = '';
       skk.switchMode(skk.previousKana);
       if (!is_commit_key) {
         return skk.handleKeyEvent(keyevent);
