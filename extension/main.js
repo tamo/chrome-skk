@@ -38,6 +38,20 @@ function updateContext(needsStatus, context) {
 chrome.input.ime.onFocus.addListener(updateContext.bind(null, true));
 chrome.input.ime.onInputContextUpdate.addListener(updateContext.bind(null, false));
 
+function reset(engineID) {
+  skk.inner_skk = null;
+  skk.roman = '';
+  skk.entries = null;
+  skk.preedit = '';
+  skk.okuriText = '';
+  skk.okuriPrefix = '';
+  if (skk.primaryModes.indexOf(skk.currentMode) < 0) {
+    skk.switchMode(skk.previousKana);
+  }
+}
+chrome.input.ime.onBlur.addListener(reset);
+chrome.input.ime.onReset.addListener(reset);
+
 chrome.input.ime.onKeyEvent.addListener(function(engineID, keyData) {
   if (keyData.type != 'keydown') {
     return false;
