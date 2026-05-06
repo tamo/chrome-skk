@@ -21,11 +21,12 @@ function initConversion(skk) {
     hint = skk.preedit.slice(semicolon + 1);
     skk.preedit = skk.preedit.slice(0, semicolon);
   }
-  skk.lookup(skk.preedit + skk.okuriPrefix, function(entries) {
-    if (entries) {
+  skk.lookup(skk.preedit + skk.okuriPrefix, function(found) {
+    const entries = hint ? skk.narrowDown(found, hint) : found;
+    if (entries?.length) {
       skk.entries = {
         index:0,
-        entries:hint ? skk.narrowDown(entries, hint) : entries,
+        entries,
         label:'asdfjkl'
       };
       updateComposition(skk);
