@@ -55,9 +55,10 @@ function conversionMode(skk, keyevent) {
       skk.switchMode('preedit');
     }
   } else if (keyevent.key == 'Esc' ||
-             (keyevent.key == 'g' && keyevent.ctrlKey)) {
+             (keyevent.key == 'g' && keyevent.ctrlKey) ||
+             keyevent.key == ';') {
     skk.entries = null;
-    skk.preedit += skk.hint ? ';' + skk.hint : skk.okuriText;
+    skk.preedit += (skk.hint || keyevent.key == ';') ? ';' + skk.hint : skk.okuriText;
     skk.okuriText = '';
     skk.okuriPrefix = '';
     skk.switchMode('preedit');
