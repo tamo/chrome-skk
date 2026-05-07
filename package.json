@@ -8,5 +8,13 @@
   "license": "MIT",
   "dependencies": {
     "pako": "^2.0.4"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "playwright": "^1.40.0"
+  },
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch"
   }
 }
