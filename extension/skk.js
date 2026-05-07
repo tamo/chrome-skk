@@ -19,16 +19,17 @@ function SKK(engineID, dictionary) {
   this.private = false;
 }
 
-SKK.prototype.commitText = function(text) {
-  chrome.input.ime.commitText({contextID:this.context, text:text});
+SKK.prototype.commitText = function (text) {
+  chrome.input.ime.commitText({ contextID: this.context, text: text });
 };
 
-SKK.prototype.setComposition = function(text, cursor, args) {
+SKK.prototype.setComposition = function (text, cursor, args) {
   var allowed_fields = ['selectionStart', 'selectionEnd'];
   var obj = {
-    contextID:this.context,
-    text:text,
-    cursor:cursor};
+    contextID: this.context,
+    text: text,
+    cursor: cursor,
+  };
   args = args || {};
   for (var i = 0; i < allowed_fields.length; i++) {
     var field = allowed_fields[i];
@@ -39,23 +40,25 @@ SKK.prototype.setComposition = function(text, cursor, args) {
   chrome.input.ime.setComposition(obj);
 };
 
-SKK.prototype.clearComposition = function() {
-  chrome.input.ime.clearComposition({contextID:this.context});
+SKK.prototype.clearComposition = function () {
+  chrome.input.ime.clearComposition({ contextID: this.context });
 };
 
-SKK.prototype.updateCandidates = function() {
+SKK.prototype.updateCandidates = function () {
   if (this.inner_skk) {
     this.inner_skk.updateCandidates();
     return;
   }
 
   if (!this.entries) {
-    chrome.input.ime.setCandidateWindowProperties({
-      engineID:this.engineID,
-      properties:{
-        visible:false
-      }
-    }).catch((e) => console.log(e));
+    chrome.input.ime
+      .setCandidateWindowProperties({
+        engineID: this.engineID,
+        properties: {
+          visible: false,
+        },
+      })
+      .catch((e) => console.log(e));
     return;
   }
 
@@ -74,36 +77,45 @@ SKK.prototype.updateCandidates = function() {
     }
     const entry = this.entries.entries[start + i];
     candidates.push({
-      candidate:entry.word,
-      id:start + i,
-      label:noList ? '' : this.entries.label[i],
-      annotation:entry.annotation
+      candidate: entry.word,
+      id: start + i,
+      label: noList ? '' : this.entries.label[i],
+      annotation: entry.annotation,
     });
   }
 
-  chrome.input.ime.setCandidates({
-    contextID:this.context, candidates:candidates
-  }).then(() =>
-    chrome.input.ime.setCandidateWindowProperties({
-      engineID:this.engineID,
-      properties:{
-        visible:true,
-        cursorVisible:true,
-        vertical:true,
-        windowPosition:'composition',
-        pageSize:pageSize,
-        auxiliaryText:this.entries.text,
-        auxiliaryTextVisible:!!this.entries.text
-      }
-    }).catch((e) => console.log(e))
-  ).then(() =>
-    chrome.input.ime.setCursorPosition({
-      contextID:this.context, candidateID:this.entries.index
-    }).catch((e) => console.log(e))
-  );
+  chrome.input.ime
+    .setCandidates({
+      contextID: this.context,
+      candidates: candidates,
+    })
+    .then(() =>
+      chrome.input.ime
+        .setCandidateWindowProperties({
+          engineID: this.engineID,
+          properties: {
+            visible: true,
+            cursorVisible: true,
+            vertical: true,
+            windowPosition: 'composition',
+            pageSize: pageSize,
+            auxiliaryText: this.entries.text,
+            auxiliaryTextVisible: !!this.entries.text,
+          },
+        })
+        .catch((e) => console.log(e)),
+    )
+    .then(() =>
+      chrome.input.ime
+        .setCursorPosition({
+          contextID: this.context,
+          candidateID: this.entries.index,
+        })
+        .catch((e) => console.log(e)),
+    );
 };
 
-SKK.prototype.lookup = function(reading, callback) {
+SKK.prototype.lookup = function (reading, callback) {
   var result = this.dictionary.lookup(reading);
   if (result) {
     callback(result.data);
@@ -112,7 +124,7 @@ SKK.prototype.lookup = function(reading, callback) {
   }
 };
 
-SKK.prototype.complete = function(dict_complete, text) {
+SKK.prototype.complete = function (dict_complete, text) {
   const entries = [];
   if (this.roman.length > 0) {
     for (var k in romanTable) {
@@ -123,16 +135,17 @@ SKK.prototype.complete = function(dict_complete, text) {
   }
   entries.sort((a, b) => b.length - a.length);
   entries.push(
-    ...dict_complete(this.preedit + this.roman)
-    .sort((a, b) => b.length - a.length)
+    ...dict_complete(this.preedit + this.roman).sort(
+      (a, b) => b.length - a.length,
+    ),
   );
   if (entries.length > 0) {
     const candidates = ['', '', '', ...new Set(entries)];
     this.entries = {
-      index:3,
-      entries:candidates.map((e) => ({word:e})),
-      label:"       ",
-      text:text
+      index: 3,
+      entries: candidates.map((e) => ({ word: e })),
+      label: '       ',
+      text: text,
     };
   } else {
     this.entries = null;
@@ -150,7 +163,7 @@ SKK.prototype.systemComplete = function () {
   this.tabbing = 'system';
 };
 
-SKK.prototype.narrowDown = function(entries, hint) {
+SKK.prototype.narrowDown = function (entries, hint) {
   const words = this.dictionary.lookup(hint);
   if (!words) {
     return [];
@@ -206,15 +219,15 @@ SKK.prototype.processRoman = function (key, table, emitter) {
 
 SKK.prototype.modes = {};
 SKK.prototype.primaryModes = [];
-SKK.registerMode = function(modeName, mode) {
+SKK.registerMode = function (modeName, mode) {
   SKK.registerImplicitMode(modeName, mode);
   SKK.prototype.primaryModes.push(modeName);
 };
-SKK.registerImplicitMode = function(modeName, mode) {
+SKK.registerImplicitMode = function (modeName, mode) {
   SKK.prototype.modes[modeName] = mode;
 };
 
-SKK.prototype.switchMode = function(newMode, isInner = false) {
+SKK.prototype.switchMode = function (newMode, isInner = false) {
   this.entries = null;
   this.oldPreedit = '';
   this.oldRoman = '';
@@ -244,24 +257,25 @@ SKK.prototype.switchMode = function(newMode, isInner = false) {
 
     if (this.primaryModes.indexOf(this.currentMode) >= 0) {
       const items = [];
-      for (var i = 0; i <this.primaryModes.length; i++) {
+      for (var i = 0; i < this.primaryModes.length; i++) {
         var modeName = this.primaryModes[i];
-        items.push({id:'skk-' + modeName,
-          label:this.modes[modeName].displayName,
-          style:'radio',
-          checked:(modeName == this.currentMode),
+        items.push({
+          id: 'skk-' + modeName,
+          label: this.modes[modeName].displayName,
+          style: 'radio',
+          checked: modeName == this.currentMode,
         });
       }
 
       chrome.input.ime.updateMenuItems({
-        engineID:this.engineID,
+        engineID: this.engineID,
         items,
       });
     }
   }
 };
 
-SKK.prototype.updateComposition = function() {
+SKK.prototype.updateComposition = function () {
   if (this.inner_skk) {
     this.inner_skk.updateComposition();
     return;
@@ -275,12 +289,12 @@ SKK.prototype.updateComposition = function() {
   }
 };
 
-SKK.prototype.handleKeyEvent = function(keyevent) {
+SKK.prototype.handleKeyEvent = function (keyevent) {
   // Do not handle modifier only keyevent.
   // 0xFFFD hack seems not working?
-  if (keyevent.ctrlKey && keyevent.key == "Ctrl") return false;
-  if (keyevent.altKey && keyevent.key == "Alt") return false;
-  if (keyevent.key.charCodeAt(0) == 0xFFFD) {
+  if (keyevent.ctrlKey && keyevent.key == 'Ctrl') return false;
+  if (keyevent.altKey && keyevent.key == 'Alt') return false;
+  if (keyevent.key.charCodeAt(0) == 0xfffd) {
     return false;
   }
 
@@ -299,7 +313,7 @@ SKK.prototype.handleKeyEvent = function(keyevent) {
       contextID: this.context,
       engineID: this.engineID,
       length: 1,
-      offset: -1
+      offset: -1,
     });
     consumed = true;
   }
@@ -308,20 +322,21 @@ SKK.prototype.handleKeyEvent = function(keyevent) {
   return consumed;
 };
 
-SKK.prototype.createInnerSKK = function() {
+SKK.prototype.createInnerSKK = function () {
   var outer_skk = this;
   var inner_skk = new SKK(this.engineID, this.dictionary);
   inner_skk.context = this.context;
   inner_skk.commit_text = '';
   inner_skk.commit_cursor = 0;
-  inner_skk.commitText = function(text) {
+  inner_skk.commitText = function (text) {
     inner_skk.commit_text =
       inner_skk.commit_text.slice(0, inner_skk.commit_cursor) +
-      text + inner_skk.commit_text.slice(inner_skk.commit_cursor);
+      text +
+      inner_skk.commit_text.slice(inner_skk.commit_cursor);
     inner_skk.commit_cursor += text.length;
   };
 
-  inner_skk.getPrefix = function() {
+  inner_skk.getPrefix = function () {
     // Show ▼ followed by the input text, * and the okuri text
     var prefix_text = '\u25bc' + outer_skk.preedit;
     if (outer_skk.okuriText.length > 0) {
@@ -333,10 +348,10 @@ SKK.prototype.createInnerSKK = function() {
       cursor += outer_skk.okuriText.length + 1;
     }
     // Add 【
-    return {text:prefix_text + '\u3010' + this.commit_text, cursor:cursor};
+    return { text: prefix_text + '\u3010' + this.commit_text, cursor: cursor };
   };
 
-  inner_skk.setComposition = function(text, cursor, args) {
+  inner_skk.setComposition = function (text, cursor, args) {
     var prefix = this.getPrefix();
     if (args && args.selectionStart) {
       args.selectionStart += prefix.text.length;
@@ -346,26 +361,30 @@ SKK.prototype.createInnerSKK = function() {
     }
     // Show 】 after the current composition
     outer_skk.setComposition(
-      prefix.text + text + '\u3011', prefix.cursor, args);
+      prefix.text + text + '\u3011',
+      prefix.cursor,
+      args,
+    );
   };
-  inner_skk.clearComposition = function() {
+  inner_skk.clearComposition = function () {
     var prefix = this.getPrefix();
     outer_skk.setComposition(prefix.text + '\u3011', prefix.cursor);
   };
 
   var original_handler = SKK.prototype.handleKeyEvent.bind(inner_skk);
-  inner_skk.handleKeyEvent = function(keyevent) {
+  inner_skk.handleKeyEvent = function (keyevent) {
     if (original_handler(keyevent)) {
       return true;
     }
 
-    if (keyevent.key == 'Right' ||
-        (keyevent.key == 'f' && keyevent.ctrlKey)) {
+    if (keyevent.key == 'Right' || (keyevent.key == 'f' && keyevent.ctrlKey)) {
       if (inner_skk.commit_cursor < inner_skk.commit_text.length) {
         inner_skk.commit_cursor++;
       }
-    } else if (keyevent.key == 'Left' ||
-               (keyevent.key == 'b' && keyevent.ctrlKey)) {
+    } else if (
+      keyevent.key == 'Left' ||
+      (keyevent.key == 'b' && keyevent.ctrlKey)
+    ) {
       if (inner_skk.commit_cursor > 0) {
         inner_skk.commit_cursor--;
       }
@@ -380,12 +399,14 @@ SKK.prototype.createInnerSKK = function() {
       }
     } else if (keyevent.key == 'Enter') {
       outer_skk.finishInner(true);
-    } else if (keyevent.key == 'Esc' ||
-        (keyevent.key == 'g' && keyevent.ctrlKey)) {
+    } else if (
+      keyevent.key == 'Esc' ||
+      (keyevent.key == 'g' && keyevent.ctrlKey)
+    ) {
       outer_skk.finishInner(false);
     } else if (keyevent.key == 'y' && keyevent.ctrlKey) {
       let readClipboardResponseHandler = (request, sender, sendResponse) => {
-        if (request.method === "read_clipboard_response") {
+        if (request.method === 'read_clipboard_response') {
           chrome.runtime.onMessage.removeListener(readClipboardResponseHandler);
           let response = request.body;
           inner_skk.commitText(response.content);
@@ -394,7 +415,7 @@ SKK.prototype.createInnerSKK = function() {
         }
       };
       chrome.runtime.onMessage.addListener(readClipboardResponseHandler);
-      chrome.runtime.sendMessage({method: "read_clipboard"});
+      chrome.runtime.sendMessage({ method: 'read_clipboard' });
     }
 
     return true;
@@ -403,18 +424,23 @@ SKK.prototype.createInnerSKK = function() {
   outer_skk.inner_skk = inner_skk;
 };
 
-SKK.prototype.recordNewResult = function(entry) {
+SKK.prototype.recordNewResult = function (entry) {
   if (this.private) return;
-  this.dictionary.recordNewResult(this.preedit.replace(/[0-9]+/g, '#') + this.okuriPrefix, entry);
+  this.dictionary.recordNewResult(
+    this.preedit.replace(/[0-9]+/g, '#') + this.okuriPrefix,
+    entry,
+  );
 };
 
-SKK.prototype.finishInner = function(successfully) {
+SKK.prototype.finishInner = function (successfully) {
   if (successfully && this.inner_skk.commit_text.length > 0) {
     var new_word = this.inner_skk.commit_text;
-    this.recordNewResult({word:new_word});
+    this.recordNewResult({ word: new_word });
 
     const numbers = this.preedit.match(/[0-9]+/g) || [];
-    this.commitText(this.dictionary.numberFormat(new_word, numbers) + this.okuriText);
+    this.commitText(
+      this.dictionary.numberFormat(new_word, numbers) + this.okuriText,
+    );
   }
 
   this.inner_skk = null;
@@ -442,46 +468,59 @@ SKK.prototype.finishInner = function(successfully) {
   }
 };
 
-SKK.prototype.showStatus = function() {
+SKK.prototype.showStatus = function () {
   if (this.inner_skk) {
     this.inner_skk.showStatus();
     return;
   }
 
-  chrome.input.ime.setCandidates({
-    contextID:this.context,
-    candidates:[{
-      id:0,
-      label:this.private ? 'private' : 'SKK',
-      candidate:this.currentMode
-    }]
-  }).then(() =>
-    chrome.input.ime.setCandidateWindowProperties({
-      engineID:this.engineID,
-      properties:{
-        visible:true,
-        cursorVisible:true,
-        vertical:true,
-        pageSize:1,
-        auxiliaryTextVisible:false
-      }
-    }).catch((e) => console.log(e))
-  ).then(() => {
-    chrome.input.ime.setCursorPosition({
-      contextID:this.context, candidateID:0
-    }).catch((e) => console.log(e));
+  chrome.input.ime
+    .setCandidates({
+      contextID: this.context,
+      candidates: [
+        {
+          id: 0,
+          label: this.private ? 'private' : 'SKK',
+          candidate: this.currentMode,
+        },
+      ],
+    })
+    .then(() =>
+      chrome.input.ime
+        .setCandidateWindowProperties({
+          engineID: this.engineID,
+          properties: {
+            visible: true,
+            cursorVisible: true,
+            vertical: true,
+            pageSize: 1,
+            auxiliaryTextVisible: false,
+          },
+        })
+        .catch((e) => console.log(e)),
+    )
+    .then(() => {
+      chrome.input.ime
+        .setCursorPosition({
+          contextID: this.context,
+          candidateID: 0,
+        })
+        .catch((e) => console.log(e));
 
-    clearTimeout(this.timeout);
-    this.timeout = setTimeout(() => {
-      this.timeout = null;
-      if (!this.entries) {
-        chrome.input.ime.setCandidateWindowProperties({
-          engineID:this.engineID,
-          properties:{
-            visible:false
-          }
-        }).catch((e) => console.log(e));
-      }
-    }, 2500);
-  }).catch((e) => console.log(e));
+      clearTimeout(this.timeout);
+      this.timeout = setTimeout(() => {
+        this.timeout = null;
+        if (!this.entries) {
+          chrome.input.ime
+            .setCandidateWindowProperties({
+              engineID: this.engineID,
+              properties: {
+                visible: false,
+              },
+            })
+            .catch((e) => console.log(e));
+        }
+      }, 2500);
+    })
+    .catch((e) => console.log(e));
 };

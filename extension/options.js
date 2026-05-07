@@ -1,5 +1,11 @@
-var compressions = [['gzip', 'gz'], ['none', '']];
-var encodings = [['EUC-JP', 'euc-jp'], ['UTF-8', 'utf-8']];
+var compressions = [
+  ['gzip', 'gz'],
+  ['none', ''],
+];
+var encodings = [
+  ['EUC-JP', 'euc-jp'],
+  ['UTF-8', 'utf-8'],
+];
 
 function buildSelect(selectElement, options) {
   for (var i = 0; i < options.length; i++) {
@@ -13,7 +19,7 @@ function buildSelect(selectElement, options) {
 function onload() {
   var form = document.getElementById('system_dictionary');
   chrome.storage.sync.get('options', (data) => {
-    console.dir({ 'status': 'loaded saved options', 'data': data });
+    console.dir({ status: 'loaded saved options', data: data });
     if (data.options && data.options.system_dictionary) {
       form.url.value = data.options.system_dictionary.url;
       form.compression.value = data.options.system_dictionary.compression;
@@ -33,8 +39,8 @@ function onload() {
       system_dictionary: {
         url: url_input.value,
         compression: compression_input.value,
-        encoding: encoding_input.value
-      }
+        encoding: encoding_input.value,
+      },
     };
     // chrome storage API does not emit an event when the value is unchanged
     // Check the currently stored value to make sure the button is not disabled forever
@@ -42,12 +48,18 @@ function onload() {
       var props = Object.getOwnPropertyNames(obj1);
       var props2 = Object.getOwnPropertyNames(obj2);
       if (props.length !== props2.length) return false;
-      for (var i = 0; i < props.length; i++) if (obj1[props[i]] !== obj2[props[i]]) return false;
+      for (var i = 0; i < props.length; i++)
+        if (obj1[props[i]] !== obj2[props[i]]) return false;
       return true;
     }
     chrome.storage.sync.get('options', (data) => {
-      if (data.options && isEqual(data.options.system_dictionary, options.system_dictionary)) {
-        console.log('The system dictionary parameters are unchanged. Do nothing.');
+      if (
+        data.options &&
+        isEqual(data.options.system_dictionary, options.system_dictionary)
+      ) {
+        console.log(
+          'The system dictionary parameters are unchanged. Do nothing.',
+        );
         return;
       }
       chrome.storage.sync.set({ options });
@@ -60,7 +72,7 @@ function onload() {
 // request is supposed to be in {method, body} format.
 function onReceive(request, sender, sendResponse) {
   switch (request.method) {
-    case "update_dictionary_load_status":
+    case 'update_dictionary_load_status':
       let body = request.body;
       var div = document.getElementById('reloading_message');
       div.innerHTML = '';
@@ -74,20 +86,21 @@ function onReceive(request, sender, sendResponse) {
       div.appendChild(document.createTextNode(body.status));
       if (body.status == 'parsing') {
         div.appendChild(
-          document.createTextNode(': ' + body.progress + '/' + body.total));
+          document.createTextNode(': ' + body.progress + '/' + body.total),
+        );
       }
       return;
-    case "read_clipboard":
+    case 'read_clipboard':
       (async () => {
         let text = await navigator.clipboard.readText();
         chrome.runtime.sendMessage({
-          method: "read_clipboard_response",
-          body: {content: text}
+          method: 'read_clipboard_response',
+          body: { content: text },
         });
       })();
       return;
     default:
-      console.log("Unexpected request: " + request.method);
+      console.log('Unexpected request: ' + request.method);
   }
 }
 

@@ -1,170 +1,180 @@
-(function() {
-function updateComposition(skk) {
-  var preedit = '\u25bd' + skk.preedit.slice(0, skk.caret) + skk.roman +
-    skk.preedit.slice(skk.caret);
-  var caret = skk.caret + skk.roman.length + 1;
-  skk.setComposition(preedit, caret);
-}
-
-function initPreedit(skk) {
-  skk.caret = skk.preedit.length;
-}
-
-function preeditKeybind(skk, keyevent) {
-  const nn = (skk.roman == 'n') ? romanTable['nn'] : '';
-
-  if (keyevent.key == 'Enter' || (keyevent.key == 'j' && keyevent.ctrlKey)) {
-    skk.commitText(skk.preedit + nn);
-    skk.preedit = '';
-    skk.roman = '';
-    skk.switchMode(skk.previousKana);
-    return true;
+(function () {
+  function updateComposition(skk) {
+    var preedit =
+      '\u25bd' +
+      skk.preedit.slice(0, skk.caret) +
+      skk.roman +
+      skk.preedit.slice(skk.caret);
+    var caret = skk.caret + skk.roman.length + 1;
+    skk.setComposition(preedit, caret);
   }
 
-  if (keyevent.key == 'Esc' || (keyevent.key == 'g' && keyevent.ctrlKey)) {
-    if (skk.tabbing) {
-      skk.preedit = skk.oldPreedit;
-      skk.roman = skk.oldRoman;
-      skk.caret = skk.preedit.length;
-      skk.userComplete();
+  function initPreedit(skk) {
+    skk.caret = skk.preedit.length;
+  }
+
+  function preeditKeybind(skk, keyevent) {
+    const nn = skk.roman == 'n' ? romanTable['nn'] : '';
+
+    if (keyevent.key == 'Enter' || (keyevent.key == 'j' && keyevent.ctrlKey)) {
+      skk.commitText(skk.preedit + nn);
+      skk.preedit = '';
+      skk.roman = '';
+      skk.switchMode(skk.previousKana);
       return true;
     }
-    skk.preedit = '';
-    skk.roman = '';
-    skk.switchMode(skk.previousKana);
-    return true;
-  }
 
-  if (keyevent.key == 'Tab' || (keyevent.key == 't' && keyevent.ctrlKey)) {
-    if (!skk.tabbing) {
-      skk.tabbing = 'user';
-      skk.oldPreedit = skk.preedit;
-      skk.oldRoman = skk.roman;
-      if (keyevent.shiftKey && skk.entries) {
-        skk.entries.index = skk.entries.entries.length - 1;
+    if (keyevent.key == 'Esc' || (keyevent.key == 'g' && keyevent.ctrlKey)) {
+      if (skk.tabbing) {
+        skk.preedit = skk.oldPreedit;
+        skk.roman = skk.oldRoman;
+        skk.caret = skk.preedit.length;
+        skk.userComplete();
+        return true;
       }
-    } else if (skk.entries) {
-      if (!keyevent.shiftKey) {
-        skk.entries.index++;
-      } else {
-        skk.entries.index--;
-        if (skk.entries.index < 3) {
+      skk.preedit = '';
+      skk.roman = '';
+      skk.switchMode(skk.previousKana);
+      return true;
+    }
+
+    if (keyevent.key == 'Tab' || (keyevent.key == 't' && keyevent.ctrlKey)) {
+      if (!skk.tabbing) {
+        skk.tabbing = 'user';
+        skk.oldPreedit = skk.preedit;
+        skk.oldRoman = skk.roman;
+        if (keyevent.shiftKey && skk.entries) {
+          skk.entries.index = skk.entries.entries.length - 1;
+        }
+      } else if (skk.entries) {
+        if (!keyevent.shiftKey) {
+          skk.entries.index++;
+        } else {
+          skk.entries.index--;
+          if (skk.entries.index < 3) {
+            skk.entries.index = skk.entries.entries.length - 1;
+          }
+        }
+      }
+      if (!skk.entries || skk.entries.index >= skk.entries.entries.length) {
+        skk.preedit = skk.oldPreedit;
+        skk.roman = skk.oldRoman;
+        skk.caret = skk.preedit.length;
+        skk.systemComplete();
+        if (!skk.entries) {
+          skk.userComplete();
+          return true;
+        } else if (keyevent.shiftKey) {
           skk.entries.index = skk.entries.entries.length - 1;
         }
       }
-    }
-    if (!skk.entries || skk.entries.index >= skk.entries.entries.length) {
-      skk.preedit = skk.oldPreedit;
-      skk.roman = skk.oldRoman;
+      skk.preedit = skk.entries.entries[skk.entries.index].word;
+      skk.roman = '';
       skk.caret = skk.preedit.length;
-      skk.systemComplete();
-      if (!skk.entries) {
+      return true;
+    }
+
+    if (keyevent.key == 'Left' || (keyevent.key == 'b' && keyevent.ctrlKey)) {
+      if (skk.caret > 0) {
+        skk.caret--;
+      }
+      skk.tabbing = null;
+      return true;
+    }
+
+    if (keyevent.key == 'Right' || (keyevent.key == 'f' && keyevent.ctrlKey)) {
+      if (skk.caret < skk.preedit.length) {
+        skk.caret++;
+      }
+      skk.tabbing = null;
+      return true;
+    }
+
+    if (
+      keyevent.key == 'Backspace' ||
+      (keyevent.key == 'h' && keyevent.ctrlKey)
+    ) {
+      if (skk.roman.length > 0) {
+        skk.roman = skk.roman.slice(0, skk.roman.length - 1);
         skk.userComplete();
-        return true;
-      } else if (keyevent.shiftKey) {
-        skk.entries.index = skk.entries.entries.length - 1;
+      } else if (skk.preedit.length > 0 && skk.caret > 0) {
+        skk.preedit =
+          skk.preedit.slice(0, skk.caret - 1) + skk.preedit.slice(skk.caret);
+        skk.caret--;
+        skk.userComplete();
+      } else {
+        if (skk.preedit.length > 0) {
+          skk.commitText(skk.preedit);
+        }
+        skk.preedit = '';
+        skk.switchMode(skk.previousKana);
       }
+      return true;
     }
-    skk.preedit = skk.entries.entries[skk.entries.index].word;
-    skk.roman = '';
-    skk.caret = skk.preedit.length;
-    return true;
-  }
 
-  if (keyevent.key == 'Left' || (keyevent.key == 'b' && keyevent.ctrlKey)) {
-    if (skk.caret > 0) {
-      skk.caret--;
-    }
-    skk.tabbing = null;
-    return true;
-  }
-
-  if (keyevent.key == 'Right' || (keyevent.key == 'f' && keyevent.ctrlKey)) {
-    if (skk.caret < skk.preedit.length) {
-      skk.caret++;
-    }
-    skk.tabbing = null;
-    return true;
-  }
-
-  if (keyevent.key == 'Backspace' || (keyevent.key == 'h' && keyevent.ctrlKey)) {
-    if (skk.roman.length > 0) {
-      skk.roman = skk.roman.slice(0, skk.roman.length - 1);
-      skk.userComplete();
-    } else if (skk.preedit.length > 0 && skk.caret > 0) {
-      skk.preedit = skk.preedit.slice(0, skk.caret - 1) +
-        skk.preedit.slice(skk.caret);
-      skk.caret--;
-      skk.userComplete();
-    } else {
-      if (skk.preedit.length > 0) {
-        skk.commitText(skk.preedit);
-      }
+    if (keyevent.key == 'q' && skk.currentMode != 'ascii-preedit') {
+      const kana = kanaTurnOver(skk.preedit + nn);
+      skk.commitText((keyevent.ctrlKey ? kanaHalfWidth : (c) => c)(kana));
       skk.preedit = '';
+      skk.roman = '';
       skk.switchMode(skk.previousKana);
+      return true;
     }
-    return true;
-  }
 
-  if (keyevent.key == 'q' && skk.currentMode != 'ascii-preedit') {
-    const kana = kanaTurnOver(skk.preedit + nn);
-    skk.commitText((keyevent.ctrlKey ? kanaHalfWidth : (c) => c)(kana));
-    skk.preedit = '';
-    skk.roman = '';
-    skk.switchMode(skk.previousKana);
-    return true;
-  }
-
-  if (keyevent.key == 'l' && skk.currentMode != 'ascii-preedit') {
-    skk.commitText(skk.preedit + nn);
-    skk.preedit = '';
-    skk.roman = '';
-    skk.switchMode('ascii');
-    return true;
-  }
-
-  if (keyevent.key == 'L' && skk.currentMode != 'ascii-preedit') {
-    skk.commitText(skk.preedit + nn);
-    skk.preedit = '';
-    skk.roman = '';
-    skk.switchMode('full-ascii');
-    return true;
-  }
-
-  return false;
-}
-
-function preeditInput(skk, keyevent) {
-  if (keyevent.key == ' ') {
-    if (skk.roman == 'n') {
-      skk.preedit += romanTable['nn'];
+    if (keyevent.key == 'l' && skk.currentMode != 'ascii-preedit') {
+      skk.commitText(skk.preedit + nn);
+      skk.preedit = '';
+      skk.roman = '';
+      skk.switchMode('ascii');
+      return true;
     }
-    const semicolon = skk.preedit.indexOf(';');
-    if (semicolon > 0) {
-      skk.hint = skk.preedit.slice(semicolon + 1);
-      skk.preedit = skk.preedit.slice(0, semicolon);
-    } else {
-      skk.hint = '';
+
+    if (keyevent.key == 'L' && skk.currentMode != 'ascii-preedit') {
+      skk.commitText(skk.preedit + nn);
+      skk.preedit = '';
+      skk.roman = '';
+      skk.switchMode('full-ascii');
+      return true;
     }
-    skk.roman = '';
-    skk.switchMode('conversion');
-    return true;
-  }
 
-  if (preeditKeybind(skk, keyevent)) {
-    return true;
-  }
-
-  if (keyevent.key.length != 1) {
-    // special keys -- ignore for now
     return false;
   }
 
-  if (skk.preedit.length > 0 &&
-      keyevent.shiftKey && 'A' <= keyevent.key && keyevent.key <= 'Z') {
-    var key = keyevent.key.toLowerCase();
-    var okuriPrefix = (skk.roman.length > 0) ? skk.roman[0] : key;
-    skk.processRoman(key, romanTable, function(text) {
+  function preeditInput(skk, keyevent) {
+    if (keyevent.key == ' ') {
+      if (skk.roman == 'n') {
+        skk.preedit += romanTable['nn'];
+      }
+      const semicolon = skk.preedit.indexOf(';');
+      if (semicolon > 0) {
+        skk.hint = skk.preedit.slice(semicolon + 1);
+        skk.preedit = skk.preedit.slice(0, semicolon);
+      } else {
+        skk.hint = '';
+      }
+      skk.roman = '';
+      skk.switchMode('conversion');
+      return true;
+    }
+
+    if (preeditKeybind(skk, keyevent)) {
+      return true;
+    }
+
+    if (keyevent.key.length != 1) {
+      // special keys -- ignore for now
+      return false;
+    }
+
+    if (
+      skk.preedit.length > 0 &&
+      keyevent.shiftKey &&
+      'A' <= keyevent.key &&
+      keyevent.key <= 'Z'
+    ) {
+      var key = keyevent.key.toLowerCase();
+      var okuriPrefix = skk.roman.length > 0 ? skk.roman[0] : key;
+      skk.processRoman(key, romanTable, function (text) {
         if (skk.roman.length > 0) {
           skk.preedit += text;
           skk.caret += text.length;
@@ -175,127 +185,140 @@ function preeditInput(skk, keyevent) {
           skk.switchMode('conversion');
         }
       });
-    if (skk.currentMode == 'preedit') {
-      // We should re-calculate the okuriPrefix since the 'roman' can be
-      // changed during processRoman -- such like 'KanJi' pattern.
-      skk.okuriPrefix = (skk.roman.length > 0) ? skk.roman[0] : key;
-      skk.switchMode('okuri-preedit');
-    }
-    return true;
-  }
-
-  var processed = skk.processRoman(keyevent.key.toLowerCase(), romanTable,
-                                   function(text) {
-      skk.preedit = skk.preedit.slice(0, skk.caret) +
-        text + skk.preedit.slice(skk.caret);
-      skk.caret += text.length;
-    });
-
-  if (skk.preedit.length > 0 && keyevent.key == '>') {
-    skk.roman = '';
-    skk.preedit += '>';
-    skk.hint = '';
-    skk.switchMode('conversion');
-  } else {
-    if (!processed) {
-      console.log(keyevent);
-      skk.preedit = skk.preedit.slice(0, skk.caret) +
-        keyevent.key + skk.preedit.slice(skk.caret);
-      skk.caret += keyevent.key.length;
-    }
-    skk.userComplete();
-  }
-  return true;
-}
-
-function updateOkuriComposition(skk) {
-  var preedit = '\u25bd' + skk.preedit.slice(0, skk.caret) +
-    '*' + skk.okuriText + skk.roman + skk.preedit.slice(skk.caret);
-  var caret = skk.caret + skk.roman.length + 2;
-  skk.setComposition(preedit, caret);
-}
-
-function okuriPreeditInput(skk, keyevent) {
-  if (keyevent.key == 'Enter' || (keyevent.key == 'j' && keyevent.ctrlKey)) {
-    skk.commitText(skk.preedit);
-    skk.preedit = '';
-    if (skk.roman == 'n') {
-      skk.commitText(romanTable['nn']);
-    }
-    skk.roman = '';
-    skk.switchMode(skk.previousKana);
-    return true;
-  }
-
-  if (keyevent.key == 'Esc' || (keyevent.key == 'g' && keyevent.ctrlKey)) {
-    skk.preedit = '';
-    skk.roman = '';
-    skk.okuriPrefix = '';
-    skk.okuriText = '';
-    skk.switchMode(skk.previousKana);
-    return true;
-  }
-
-  if (keyevent.key == 'Tab' || (keyevent.key == 't' && keyevent.ctrlKey)) {
-    return true;
-  }
-
-  if (keyevent.key == 'Backspace' || (keyevent.key == 'h' && keyevent.ctrlKey)) {
-    skk.roman = skk.roman.slice(0, skk.roman.length - 1);
-    if (skk.roman.length == 0) {
-      skk.okuriPrefix = '';
-      skk.roman = '';
-      skk.switchMode('preedit');
+      if (skk.currentMode == 'preedit') {
+        // We should re-calculate the okuriPrefix since the 'roman' can be
+        // changed during processRoman -- such like 'KanJi' pattern.
+        skk.okuriPrefix = skk.roman.length > 0 ? skk.roman[0] : key;
+        skk.switchMode('okuri-preedit');
+      }
       return true;
     }
-  }
 
-  skk.processRoman(keyevent.key.toLowerCase(), romanTable, function(text) {
-    skk.okuriText += text;
-    if (skk.roman.length == 0) {
+    var processed = skk.processRoman(
+      keyevent.key.toLowerCase(),
+      romanTable,
+      function (text) {
+        skk.preedit =
+          skk.preedit.slice(0, skk.caret) + text + skk.preedit.slice(skk.caret);
+        skk.caret += text.length;
+      },
+    );
+
+    if (skk.preedit.length > 0 && keyevent.key == '>') {
+      skk.roman = '';
+      skk.preedit += '>';
       skk.hint = '';
       skk.switchMode('conversion');
+    } else {
+      if (!processed) {
+        console.log(keyevent);
+        skk.preedit =
+          skk.preedit.slice(0, skk.caret) +
+          keyevent.key +
+          skk.preedit.slice(skk.caret);
+        skk.caret += keyevent.key.length;
+      }
+      skk.userComplete();
     }
+    return true;
+  }
+
+  function updateOkuriComposition(skk) {
+    var preedit =
+      '\u25bd' +
+      skk.preedit.slice(0, skk.caret) +
+      '*' +
+      skk.okuriText +
+      skk.roman +
+      skk.preedit.slice(skk.caret);
+    var caret = skk.caret + skk.roman.length + 2;
+    skk.setComposition(preedit, caret);
+  }
+
+  function okuriPreeditInput(skk, keyevent) {
+    if (keyevent.key == 'Enter' || (keyevent.key == 'j' && keyevent.ctrlKey)) {
+      skk.commitText(skk.preedit);
+      skk.preedit = '';
+      if (skk.roman == 'n') {
+        skk.commitText(romanTable['nn']);
+      }
+      skk.roman = '';
+      skk.switchMode(skk.previousKana);
+      return true;
+    }
+
+    if (keyevent.key == 'Esc' || (keyevent.key == 'g' && keyevent.ctrlKey)) {
+      skk.preedit = '';
+      skk.roman = '';
+      skk.okuriPrefix = '';
+      skk.okuriText = '';
+      skk.switchMode(skk.previousKana);
+      return true;
+    }
+
+    if (keyevent.key == 'Tab' || (keyevent.key == 't' && keyevent.ctrlKey)) {
+      return true;
+    }
+
+    if (
+      keyevent.key == 'Backspace' ||
+      (keyevent.key == 'h' && keyevent.ctrlKey)
+    ) {
+      skk.roman = skk.roman.slice(0, skk.roman.length - 1);
+      if (skk.roman.length == 0) {
+        skk.okuriPrefix = '';
+        skk.roman = '';
+        skk.switchMode('preedit');
+        return true;
+      }
+    }
+
+    skk.processRoman(keyevent.key.toLowerCase(), romanTable, function (text) {
+      skk.okuriText += text;
+      if (skk.roman.length == 0) {
+        skk.hint = '';
+        skk.switchMode('conversion');
+      }
+    });
+    return true;
+  }
+
+  function asciiPreeditInput(skk, keyevent) {
+    if (keyevent.key == ' ') {
+      skk.hint = '';
+      skk.switchMode('conversion');
+      return true;
+    }
+
+    if (preeditKeybind(skk, keyevent)) {
+      return true;
+    }
+
+    if (keyevent.key.length != 1) {
+      return true;
+    }
+
+    skk.preedit += keyevent.key;
+    skk.caret++;
+    return true;
+  }
+
+  SKK.registerImplicitMode('preedit', {
+    keyHandler: preeditInput,
+    compositionHandler: updateComposition,
+    initHandler: initPreedit,
   });
-  return true;
-}
 
-function asciiPreeditInput(skk, keyevent) {
-  if (keyevent.key == ' ') {
-    skk.hint = '';
-    skk.switchMode('conversion');
-    return true;
-  }
+  SKK.registerImplicitMode('okuri-preedit', {
+    keyHandler: okuriPreeditInput,
+    compositionHandler: updateOkuriComposition,
+  });
 
-  if (preeditKeybind(skk, keyevent)) {
-    return true;
-  }
-
-  if (keyevent.key.length != 1) {
-    return true;
-  }
-
-  skk.preedit += keyevent.key;
-  skk.caret++;
-  return true;
-}
-
-SKK.registerImplicitMode('preedit', {
-  keyHandler: preeditInput,
-  compositionHandler: updateComposition,
-  initHandler: initPreedit
-});
-
-SKK.registerImplicitMode('okuri-preedit', {
-  keyHandler: okuriPreeditInput,
-  compositionHandler: updateOkuriComposition
-});
-
-SKK.registerImplicitMode('ascii-preedit', {
-  keyHandler: asciiPreeditInput,
-  compositionHandler: updateComposition,
-  initHandler: initPreedit
-});
+  SKK.registerImplicitMode('ascii-preedit', {
+    keyHandler: asciiPreeditInput,
+    compositionHandler: updateComposition,
+    initHandler: initPreedit,
+  });
 })();
 
 function kanaTurnOver(str) {
