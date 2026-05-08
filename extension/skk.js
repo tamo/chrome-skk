@@ -250,28 +250,23 @@ SKK.prototype.switchMode = function (newMode, isInner = false) {
     initHandler(this);
   }
 
-  if (this.primaryModes.indexOf(this.previousMode) >= 0) {
-    if (!isInner) {
-      this.previousKana = this.previousMode;
-    }
+  if (this.primaryModes.indexOf(this.previousMode) >= 0 && !isInner) {
+    this.previousKana = this.previousMode;
+  }
 
-    if (this.primaryModes.indexOf(this.currentMode) >= 0) {
-      const items = [];
-      for (var i = 0; i < this.primaryModes.length; i++) {
-        var modeName = this.primaryModes[i];
-        items.push({
-          id: 'skk-' + modeName,
-          label: this.modes[modeName].displayName,
-          style: 'radio',
-          checked: modeName == this.currentMode,
-        });
-      }
-
-      chrome.input.ime.updateMenuItems({
-        engineID: this.engineID,
-        items,
+  if (this.primaryModes.indexOf(this.currentMode) >= 0) {
+    const items = [];
+    for (var i = 0; i < this.primaryModes.length; i++) {
+      var modeName = this.primaryModes[i];
+      items.push({
+        id: 'skk-' + modeName,
+        label: this.modes[modeName].displayName,
+        style: 'radio',
+        checked: modeName == this.currentMode,
       });
     }
+
+    chrome.input.ime.updateMenuItems({ engineID: this.engineID, items });
   }
 };
 
