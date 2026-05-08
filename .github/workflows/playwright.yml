@@ -15,6 +15,7 @@ jobs:
       with:
         node-version: lts/*
     - run: npm install
+    - run: cp node_modules/pako/dist/pako_inflate.es5.min.js extension/
     - run: wget -P testpage https://tamo.github.io/dict/SKK-JISYO.L.gz
     - run: npm test
 
