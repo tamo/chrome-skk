@@ -3,18 +3,20 @@
   "version": "0.0.1",
   "description": "SKK for Chrome OS",
   "main": "index.js",
-  "repository": "ssh://git@github.com/hkurokawa/chrome-skk.git",
+  "repository": "https://github.com/tamo/chrome-skk.git",
   "author": "hkurokawa <hirosh.kurokawa@gmail.com>",
+  "contributors": [
+    "tamo <ttakah@gmail.com>"
+  ],
   "license": "MIT",
   "dependencies": {
     "pako": "^2.0.4"
   },
   "devDependencies": {
-    "jest": "^29.7.0",
+    "@playwright/test": "^1.59.1",
     "playwright": "^1.40.0"
   },
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "test": "playwright test"
   }
 }

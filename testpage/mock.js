@@ -111,7 +111,7 @@ var chrome = {};
     pageSize: kDefaultCandidateWindowPageSize,
   };
 
-  function setCandidateWindowProperties(obj) {
+  async function setCandidateWindowProperties(obj) {
     var properties = obj.properties;
     document.getElementById('candidate-window').style.display =
       properties.visible ? 'block' : 'none';
@@ -132,7 +132,7 @@ var chrome = {};
     }
   }
 
-  function setCandidates(obj) {
+  async function setCandidates(obj) {
     var candidates = obj.candidates;
     var parent = document.getElementById('candidates');
     parent.innerHTML = '';
@@ -245,7 +245,7 @@ var chrome = {};
     }
   }
 
-  function NotImplemented(obj, callback) {
+  async function NotImplemented(obj, callback) {
     console.log('NotImplemented');
     if (callback) {
       callback(false);
@@ -258,12 +258,6 @@ var chrome = {};
       if (callback) {
         callback(true);
       }
-    };
-  }
-
-  function Thenabler(func) {
-    return async function (obj) {
-      return func(obj);
     };
   }
 
@@ -287,9 +281,9 @@ var chrome = {};
       clearComposition: Callbacker(clearComposition),
       commitText: Callbacker(commitText),
       deleteSurroundingText: Callbacker(deleteSurroundingText),
-      setCandidateWindowProperties: Thenabler(setCandidateWindowProperties),
-      setCandidates: Thenabler(setCandidates),
-      setCursorPosition: Thenabler(NotImplemented),
+      setCandidateWindowProperties: setCandidateWindowProperties,
+      setCandidates: setCandidates,
+      setCursorPosition: NotImplemented,
       setMenuItems: Callbacker(setMenuItems),
       updateMenuItems: Callbacker(updateMenuItems),
       sendKeyEvent: NotImplemented,
@@ -348,12 +342,14 @@ var chrome = {};
   var mockContext = {
     textID: 0,
     type: 'Text',
+    shouldDoLearning: true,
   };
 
   window.addEventListener('load', function () {
     document.getElementById('result').style.borderRight = 'solid 1px';
     chrome.input.ime.onActivate.emit(mockEngineId);
     chrome.input.ime.onFocus.emit(mockEngineId, mockContext);
+    chrome.input.ime.onInputContextUpdate.emit(mockContext);
   });
 
   function emitKeyEvent(ev) {
