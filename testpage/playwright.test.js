@@ -1,8 +1,6 @@
 import { test, expect } from '@playwright/test';
-import fs from 'fs';
 
 test.describe('SKK Integration Tests', () => {
-  const testPagePath = `file://${__dirname}/testpage.html`;
   const composition = (page) => page.locator('#ime-composition');
   const result = (page) => page.locator('#result');
   const mode = (page) =>
@@ -11,12 +9,14 @@ test.describe('SKK Integration Tests', () => {
   const candidate = (page, i) => page.locator(`#candidate-${i}`);
 
   test.beforeEach(async ({ page }) => {
-    await page.route('**/SKK-JISYO.L.gz', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/octet-stream',
-        body: fs.readFileSync(`${__dirname}/SKK-JISYO.L.gz`)
+    await page.route('**', async (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname.endsWith('/SKK-JISYO.L.gz'))
+        url.pathname = '/testpage/SKK-JISYO.L.gz';
+      const response = await route.fetch({
+        url: `http://localhost:8080${url.pathname}`,
       });
+      await route.fulfill({ response });
     });
     page.on('console', (msg) => {
       const text = msg.text();
@@ -28,7 +28,7 @@ test.describe('SKK Integration Tests', () => {
         return;
       console.log(msg.text());
     });
-    await page.goto(testPagePath);
+    await page.goto('http://example.com/testpage/testpage.html');
     await page.waitForLoadState('networkidle');
   });
 
