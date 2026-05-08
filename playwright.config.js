@@ -7,6 +7,8 @@ export default defineConfig({
   webServer: {
     command: 'npx http-server ./ -p 8080 --cors',
     url: 'http://127.0.0.1:8080',
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
 });
 
