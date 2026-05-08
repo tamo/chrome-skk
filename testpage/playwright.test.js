@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
+import fs from 'fs';
 
 test.describe('SKK Integration Tests', () => {
-  const testPagePath = `file://${__dirname}/../testpage/testpage.html`;
+  const testPagePath = `file://${__dirname}/testpage.html`;
   const composition = (page) => page.locator('#ime-composition');
   const result = (page) => page.locator('#result');
   const mode = (page) =>
@@ -10,6 +11,13 @@ test.describe('SKK Integration Tests', () => {
   const candidate = (page, i) => page.locator(`#candidate-${i}`);
 
   test.beforeEach(async ({ page }) => {
+    await page.route('**/SKK-JISYO.L.gz', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/octet-stream',
+        body: fs.readFileSync(`${__dirname}/SKK-JISYO.L.gz`)
+      });
+    });
     page.on('console', (msg) => {
       const text = msg.text();
       if (
