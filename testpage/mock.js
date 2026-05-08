@@ -335,7 +335,7 @@ var chrome = {};
   };
 
   chrome['runtime'] = {
-    sendMessage: (_) => {},
+    sendMessage: (obj, _callback) => console.log(obj.method, obj.body),
   };
 
   var mockEngineId = 'sample';

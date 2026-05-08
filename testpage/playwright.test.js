@@ -10,6 +10,16 @@ test.describe('SKK Integration Tests', () => {
   const candidate = (page, i) => page.locator(`#candidate-${i}`);
 
   test.beforeEach(async ({ page }) => {
+    page.on('console', (msg) => {
+      const text = msg.text();
+      if (
+        text.startsWith(
+          'update_dictionary_load_status {status: parsing, progress:',
+        )
+      )
+        return;
+      console.log(msg.text());
+    });
     await page.goto(testPagePath);
     await page.waitForLoadState('networkidle');
   });
