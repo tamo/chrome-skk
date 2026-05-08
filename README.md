@@ -11,6 +11,7 @@ Chrome OS 用 SKK IME
 
 # インストール方法
 1. git clone して Chrome OS 側と共有する (あるいは **Code** から **Download ZIP** して展開する)
+1. `extension` ディレクトリに `https://raw.githubusercontent.com/nodeca/pako/refs/heads/master/dist/pako_deflate.es5.min.js` をダウンロード
 1. Chrome で `chrome://extensions` を開き、 **Load Unpacked** をクリックして先程のフォルダ内の `extension` を指定する
 
 # 設定方法
