@@ -14,7 +14,7 @@ test.describe('SKK Integration Tests', () => {
       if (url.pathname.endsWith('/SKK-JISYO.L.gz'))
         url.pathname = '/testpage/SKK-JISYO.L.gz';
       const response = await route.fetch({
-        url: `http://localhost:8080${url.pathname}`,
+        url: `http://127.0.0.1:8080${url.pathname}`,
       });
       await route.fulfill({ response });
     });
