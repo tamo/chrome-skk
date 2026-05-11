@@ -357,6 +357,7 @@ test.describe('SKK Integration Tests', () => {
       await expect(composition(page)).toHaveText('▼んん【】');
       await page.keyboard.press('a');
       await page.keyboard.press('Control+y'); // paste
+      await expect(composition(page)).toHaveText('▼んん【あ🤔】'); // can be slow
       await page.keyboard.press('e');
       await expect(composition(page)).toHaveText('▼んん【あ🤔え】');
       await page.keyboard.press('Control+b'); // same as ArrowLeft
