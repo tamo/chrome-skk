@@ -1,30 +1,24 @@
-var skk_dictionary = new Dictionary();
-var skk = null;
+const skk_dictionary = new Dictionary();
+let skk = null;
 
-(function () {
-  chrome.input.ime.onActivate.addListener(function (engineID) {
+(() => {
+  chrome.input.ime.onActivate.addListener((engineID) => {
     skk = new SKK(engineID, skk_dictionary);
-    var menus = [
-      { id: 'skk-options', label: 'SKK\u306E\u8A2D\u5B9A', style: 'check' },
-      { id: 'skk-separator', style: 'separator' },
-    ];
-    for (var i = 0; i < skk.primaryModes.length; i++) {
-      var modeName = skk.primaryModes[i];
-      menus.push({
+    const items = structuredClone(skk.menuHeader);
+    for (const modeName of skk.primaryModes) {
+      items.push({
         id: 'skk-' + modeName,
         label: skk.modes[modeName].displayName,
         style: 'radio',
-        checked: modeName == 'hiragana',
+        checked: modeName == skk.currentMode,
       });
     }
-    chrome.input.ime.setMenuItems({ engineID: engineID, items: menus });
+    chrome.input.ime.setMenuItems({ engineID, items });
   });
 
-  function updateContext(needsStatus, context) {
-    (function setContext(outer, context) {
-      if (!outer) {
-        return true;
-      }
+  const updateContext = (needsStatus, context) => {
+    const setContext = (outer, context) => {
+      if (!outer) return true;
       outer.context = context.contextID;
       outer.private = !context.shouldDoLearning;
 
@@ -33,43 +27,40 @@ var skk = null;
         outer.showStatus();
       }
       return false;
-    })(skk, context);
-  }
+    };
+    setContext(skk, context);
+  };
 
   chrome.input.ime.onFocus.addListener(updateContext.bind(null, true));
   chrome.input.ime.onInputContextUpdate.addListener(
     updateContext.bind(null, false),
   );
 
-  function reset(engineID) {
+  const reset = () => {
     skk.inner_skk = null;
     skk.roman = '';
     skk.entries = null;
     skk.preedit = '';
     skk.okuriText = '';
     skk.okuriPrefix = '';
-    if (skk.primaryModes.indexOf(skk.currentMode) < 0) {
+    if (!skk.primaryModes.includes(skk.currentMode)) {
       skk.switchMode(skk.previousKana);
     }
-  }
+  };
   chrome.input.ime.onBlur.addListener(reset);
   chrome.input.ime.onReset.addListener(reset);
 
-  chrome.input.ime.onKeyEvent.addListener(function (engineID, keyData) {
-    if (keyData.type != 'keydown') {
-      return false;
-    }
-
+  chrome.input.ime.onKeyEvent.addListener((engineID, keyData) => {
+    if (keyData.type != 'keydown') return false;
     return skk.handleKeyEvent(keyData);
   });
 
-  chrome.input.ime.onMenuItemActivated.addListener(function (engineID, name) {
+  chrome.input.ime.onMenuItemActivated.addListener((engineID, name) => {
     if (name == 'skk-options') {
       chrome.runtime.openOptionsPage();
       return;
     }
 
-    var modeName = name.slice('skk-'.length);
-    skk.switchMode(modeName);
+    skk.switchMode(name.slice('skk-'.length));
   });
 })();

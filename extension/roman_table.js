@@ -1,4 +1,4 @@
-var romanTable = {
+const romanTable = {
   a: '\u3042',
   i: '\u3044',
   u: '\u3046',
@@ -132,29 +132,103 @@ var romanTable = {
   z9: '\u2468', // ⑨
 };
 
-var katakanaTable = {};
-var hankataTable = {};
+const katakanaTable = {};
+const hankataTable = {};
 
-(function () {
-  function initRomanTable() {
-    var youons = ['k', 's', 't', 'n', 'h', 'm', 'r', 'g', 'd', 'b', 'p', 'z'];
+const KANA_HALF_WIDTH_MAP = {
+  0x3000: [0x0020], // スペース
+  0x3001: [0xff64], // 、
+  0x3002: [0xff61], // 。
+  0x300c: [0xff62], // ｢
+  0x300d: [0xff63], // ｣
+  // ァ〜ロ
+  0x30ee: [0xff9c], // ヮ
+  0x30ef: [0xff9c], // ワ
+  0x30f2: [0xff66], // ヲ
+  0x30f3: [0xff9d], // ン
+  0x30f4: [0xff73, 0xff9e], // ヴ
+  0x30f5: [0xff76], // ヵ
+  0x30f6: [0xff79], // ヶ
+  0x30fb: [0xff61], // ・
+  0x30fc: [0xff70], // ー
+};
+for (let c = 0x30a1; c <= 0x30ed; c++) {
+  const map = KANA_HALF_WIDTH_MAP;
+  switch (true) {
+    case 0x30a1 <= c && c <= 0x30aa: {
+      const isLarge = 1 - (c % 2); // ァ〜オ
+      map[c] = [c + 0xcec6 - Math.floor((c - 0x30a1) / 2) + isLarge * 9.5];
+      break;
+    }
+    case 0x30ab <= c && c <= 0x30c2: {
+      const isDakuon = 1 - (c % 2); // カ〜ヂ
+      map[c] = [
+        c + 0xcecb - Math.floor((c - 0x30ab + isDakuon) / 2),
+        ...(isDakuon ? [0xff9e] : []),
+      ];
+      break;
+    }
+    case 0x30c3 == c: // ッ
+      map[c] = [0xff6f];
+      break;
+    case 0x30c4 <= c && c <= 0x30c9: {
+      const isDakuon = c % 2; // ツ〜ド
+      map[c] = [
+        c + 0xcebe - Math.floor((c - 0x30c4 + isDakuon) / 2),
+        ...(isDakuon ? [0xff9e] : []),
+      ];
+      break;
+    }
+    case 0x30ca <= c && c <= 0x30ce: // ナ〜ノ
+      map[c] = [c + 0xcebb];
+      break;
+    case 0x30cf <= c && c <= 0x30dd: {
+      const isDakuon = c % 3; // ハ〜ポ
+      map[c] = [
+        c + 0xcebb - 2 * Math.floor((c - 0x30cf) / 3) - isDakuon,
+        ...(isDakuon ? [0xff9e] : []),
+      ];
+      break;
+    }
+    case 0x30de <= c && c <= 0x30e2: // マ〜モ
+      map[c] = [c + 0xceb1];
+      break;
+    case 0x30e3 <= c && c <= 0x30e8: {
+      const isLarge = 1 - (c % 2); // ャ〜ヨ
+      map[c] = [c + 0xce89 - Math.floor((c - 0x30e3) / 2) + isLarge * 39.5];
+      break;
+    }
+    case 0x30e9 <= c && c <= 0x30ed: // ラ〜ロ
+      map[c] = [c + 0xceae];
+  }
+}
+
+const kanaHalfWidth = (str) =>
+  Array.from(str, (ch) => {
+    const c = ch.charCodeAt(0);
+    return String.fromCharCode(...(KANA_HALF_WIDTH_MAP[c] ?? [c]));
+  }).join('');
+
+(() => {
+  const initRomanTable = () => {
+    const youons = ['k', 's', 't', 'n', 'h', 'm', 'r', 'g', 'd', 'b', 'p', 'z'];
     // Add a mapping from "consonant + prefix + vowel" -> "consonant + i + small vowel"
     // Ex. tya -> ti + small a, shu -> si + small u
-    function addYouon(youon, prefix, base) {
-      var mapping = {
+    const addYouon = (youon, prefix, base) => {
+      const mapping = {
         a: '\u3083',
         i: '\u3043',
         u: '\u3085',
         e: '\u3047',
         o: '\u3087',
       };
-      for (var sound in mapping) {
-        var youon_char = mapping[sound];
+      for (const sound in mapping) {
+        const youon_char = mapping[sound];
         romanTable[youon + prefix + sound] = base + youon_char;
       }
-    }
-    for (var i = 0; i < youons.length; i++) {
-      addYouon(youons[i], 'y', romanTable[youons[i] + 'i']);
+    };
+    for (const youon of youons) {
+      addYouon(youon, 'y', romanTable[youon + 'i']);
     }
 
     addYouon('x', 'y', '');
@@ -169,89 +243,16 @@ var hankataTable = {};
     romanTable['chi'] = romanTable['ti'];
     romanTable['ji'] = romanTable['zi'];
 
-    for (var key in romanTable) {
-      var hiragana = romanTable[key];
-      var katakana = '';
-      for (var i = 0; i < hiragana.length; i++) {
-        var c = hiragana.charCodeAt(i);
-        if (c > 0x3040 && c < 0x30a0) {
-          katakana += String.fromCharCode(c + 0x60);
-        } else {
-          katakana += String.fromCharCode(c);
-        }
-      }
+    for (const [key, hiragana] of Object.entries(romanTable)) {
+      const katakana = Array.from(hiragana, (ch) => {
+        const c = ch.charCodeAt(0);
+        if (0x3040 < c && c < 0x3097) return String.fromCharCode(c + 0x60);
+        return ch;
+      }).join('');
       katakanaTable[key] = katakana;
       hankataTable[key] = kanaHalfWidth(katakana);
     }
-  }
+  };
 
   initRomanTable();
 })();
-
-function kanaHalfWidth(str) {
-  let halfWidthStr = '';
-  for (let i = 0; i < str.length; i++) {
-    const c = str.charCodeAt(i);
-    halfWidthStr += String.fromCharCode(...halfWidthCodes(c));
-  }
-  return halfWidthStr;
-}
-
-function halfWidthCodes(c) {
-  if (0x3000 == c)
-    return [0x0020]; // スペース
-  else if (0x3001 == c)
-    return [0xff64]; // 、
-  else if (0x3002 == c)
-    return [0xff61]; // 。
-  else if (0x300c == c)
-    return [0xff62]; // ｢
-  else if (0x300d == c)
-    return [0xff63]; // ｣
-  else if (0x30a1 <= c && c < 0x30ab) {
-    // ァア
-    const isLarge = 1 - (c % 2);
-    return [c + 0xcec6 - (c - 0x30a1) / 2 + isLarge * 9.5];
-  } else if (0x30ab <= c && c < 0x30c3) {
-    // カガ
-    const isDakuon = 1 - (c % 2);
-    const result = [c + 0xcecb - (c - 0x30ab + isDakuon) / 2];
-    if (isDakuon) result.push(0xff9e);
-    return result;
-  } else if (0x30c3 == c)
-    return [0xff6f]; // ッ
-  else if (0x30c4 <= c && c < 0x30ca) {
-    // ツヅ
-    const isDakuon = c % 2;
-    const result = [c + 0xcebe - (c - 0x30c4 + isDakuon) / 2];
-    if (isDakuon) result.push(0xff9e);
-    return result;
-  } else if (0x30ca <= c && c < 0x30cf)
-    return [c + 0xcebb]; // ナ
-  else if (0x30cf <= c && c < 0x30de) {
-    // ハバパ
-    const isDakuon = c % 3;
-    const result = [c + 0xcebb - 2 * Math.trunc((c - 0x30cf) / 3) - isDakuon];
-    if (isDakuon) result.push(0xff9d + isDakuon);
-    return result;
-  } else if (0x30de <= c && c < 0x30e3)
-    return [c + 0xceb1]; // マ
-  else if (0x30e3 <= c && c < 0x30e9) {
-    // ャヤ
-    const isLarge = 1 - (c % 2);
-    return [c + 0xce89 - (c - 0x30e3) / 2 + isLarge * 39.5];
-  } else if (0x30e9 <= c && c < 0x30ef)
-    return [c + 0xceae]; // ラ
-  else if (0x30ef == c)
-    return [0xff9c]; // ワ
-  else if (0x30f2 == c)
-    return [0xff66]; // ヲ
-  else if (0x30f3 == c)
-    return [0xff9d]; // ン
-  else if (0x30f4 == c)
-    return [0xff73, 0xff9e]; // ヴ
-  else if (0x30fb == c)
-    return [0xff61]; // ・
-  else if (0x30fc == c) return [0xff70]; // ー
-  return [c];
-}

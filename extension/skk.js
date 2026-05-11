@@ -1,3 +1,5 @@
+const STATUS_DURATION = 2500;
+
 function SKK(engineID, dictionary) {
   this.engineID = engineID;
   this.context = null;
@@ -17,6 +19,7 @@ function SKK(engineID, dictionary) {
   this.dictionary = dictionary;
   this.timeout = null;
   this.private = false;
+  this.createOffscreen = null;
 }
 
 SKK.prototype.commitText = function (text) {
@@ -24,15 +27,10 @@ SKK.prototype.commitText = function (text) {
 };
 
 SKK.prototype.setComposition = function (text, cursor, args) {
-  var allowed_fields = ['selectionStart', 'selectionEnd'];
-  var obj = {
-    contextID: this.context,
-    text: text,
-    cursor: cursor,
-  };
+  const allowed_fields = ['selectionStart', 'selectionEnd'];
+  const obj = { contextID: this.context, text, cursor };
   args = args || {};
-  for (var i = 0; i < allowed_fields.length; i++) {
-    var field = allowed_fields[i];
+  for (const field of allowed_fields) {
     if (args[field]) {
       obj[field] = args[field];
     }
@@ -71,7 +69,7 @@ SKK.prototype.updateCandidates = function () {
     this.entries.text = '+ ' + remaining;
   }
 
-  for (var i = 0; i < pageSize; i++) {
+  for (let i = 0; i < pageSize; i++) {
     if (start + i >= this.entries.entries.length) {
       break;
     }
@@ -87,7 +85,7 @@ SKK.prototype.updateCandidates = function () {
   chrome.input.ime
     .setCandidates({
       contextID: this.context,
-      candidates: candidates,
+      candidates,
     })
     .then(() =>
       chrome.input.ime
@@ -98,7 +96,7 @@ SKK.prototype.updateCandidates = function () {
             cursorVisible: true,
             vertical: true,
             windowPosition: 'composition',
-            pageSize: pageSize,
+            pageSize,
             auxiliaryText: this.entries.text,
             auxiliaryTextVisible: !!this.entries.text,
           },
@@ -116,18 +114,14 @@ SKK.prototype.updateCandidates = function () {
 };
 
 SKK.prototype.lookup = function (reading, callback) {
-  var result = this.dictionary.lookup(reading);
-  if (result) {
-    callback(result.data);
-  } else {
-    callback(null);
-  }
+  const result = this.dictionary.lookup(reading);
+  callback(result?.data);
 };
 
 SKK.prototype.complete = function (dict_complete, text) {
   const entries = [];
   if (this.roman.length > 0) {
-    for (var k in romanTable) {
+    for (const k in romanTable) {
       if (k.startsWith(this.roman)) {
         entries.push(...dict_complete(this.preedit + romanTable[k]));
       }
@@ -145,7 +139,7 @@ SKK.prototype.complete = function (dict_complete, text) {
       index: 3,
       entries: candidates.map((e) => ({ word: e })),
       label: '       ',
-      text: text,
+      text,
     };
   } else {
     this.entries = null;
@@ -165,25 +159,13 @@ SKK.prototype.systemComplete = function () {
 
 SKK.prototype.narrowDown = function (entries, hint) {
   const words = this.dictionary.lookup(hint);
-  if (!words) {
-    return [];
-  }
+  if (!words) return [];
   const kanjis = words.data.flatMap((w) => [...w.word]);
   return entries.filter((e) => kanjis.some((k) => e.word.includes(k)));
 };
 
 SKK.prototype.processRoman = function (key, table, emitter) {
-  function isStarting(key) {
-    var starting = false;
-    for (var k in table) {
-      if (k.indexOf(key) == 0) {
-        starting = true;
-      }
-    }
-    return starting;
-  }
-
-  var roman = this.roman + key;
+  const roman = this.roman + key;
   if (table[roman]) {
     this.roman = '';
     emitter(table[roman]);
@@ -195,7 +177,7 @@ SKK.prototype.processRoman = function (key, table, emitter) {
     emitter(table['xtu']);
   }
 
-  if (isStarting(roman, table)) {
+  if (Object.keys(table).some((k) => k.startsWith(roman))) {
     this.roman = roman;
     return true;
   }
@@ -208,7 +190,7 @@ SKK.prototype.processRoman = function (key, table, emitter) {
     this.roman = '';
     emitter(table[key]);
     return true;
-  } else if (isStarting(key, table)) {
+  } else if (Object.keys(table).some((k) => k.startsWith(key))) {
     this.roman = key;
     return true;
   } else {
@@ -219,23 +201,24 @@ SKK.prototype.processRoman = function (key, table, emitter) {
 
 SKK.prototype.modes = {};
 SKK.prototype.primaryModes = [];
-SKK.registerMode = function (modeName, mode) {
+SKK.registerMode = (modeName, mode) => {
   SKK.registerImplicitMode(modeName, mode);
   SKK.prototype.primaryModes.push(modeName);
 };
-SKK.registerImplicitMode = function (modeName, mode) {
+SKK.registerImplicitMode = (modeName, mode) => {
   SKK.prototype.modes[modeName] = mode;
 };
+SKK.prototype.menuHeader = [
+  { id: 'skk-options', label: 'SKK\u306E\u8A2D\u5B9A', style: 'check' },
+  { id: 'skk-separator', style: 'separator' },
+];
 
 SKK.prototype.switchMode = function (newMode, isInner = false) {
   this.entries = null;
   this.oldPreedit = '';
   this.oldRoman = '';
   this.tabbing = null;
-  if (newMode == this.currentMode) {
-    // already switched.
-    return;
-  }
+  if (newMode == this.currentMode) return;
 
   if (this.inner_skk) {
     this.inner_skk.switchMode(newMode, true);
@@ -245,19 +228,18 @@ SKK.prototype.switchMode = function (newMode, isInner = false) {
   this.previousMode = this.currentMode;
   this.currentMode = newMode;
   this.showStatus();
-  var initHandler = this.modes[this.currentMode].initHandler;
+  const initHandler = this.modes[this.currentMode].initHandler;
   if (initHandler) {
     initHandler(this);
   }
 
-  if (this.primaryModes.indexOf(this.previousMode) >= 0 && !isInner) {
+  if (this.primaryModes.includes(this.previousMode) && !isInner) {
     this.previousKana = this.previousMode;
   }
 
-  if (this.primaryModes.indexOf(this.currentMode) >= 0) {
-    const items = [];
-    for (var i = 0; i < this.primaryModes.length; i++) {
-      var modeName = this.primaryModes[i];
+  if (this.primaryModes.includes(this.currentMode)) {
+    const items = structuredClone(this.menuHeader);
+    for (modeName of this.primaryModes) {
       items.push({
         id: 'skk-' + modeName,
         label: this.modes[modeName].displayName,
@@ -266,7 +248,7 @@ SKK.prototype.switchMode = function (newMode, isInner = false) {
       });
     }
 
-    chrome.input.ime.updateMenuItems({ engineID: this.engineID, items });
+    chrome.input.ime.setMenuItems({ engineID: this.engineID, items });
   }
 };
 
@@ -276,7 +258,7 @@ SKK.prototype.updateComposition = function () {
     return;
   }
 
-  var compositionHandler = this.modes[this.currentMode].compositionHandler;
+  const compositionHandler = this.modes[this.currentMode].compositionHandler;
   if (compositionHandler) {
     compositionHandler(this);
   } else {
@@ -289,15 +271,13 @@ SKK.prototype.handleKeyEvent = function (keyevent) {
   // 0xFFFD hack seems not working?
   if (keyevent.ctrlKey && keyevent.key == 'Ctrl') return false;
   if (keyevent.altKey && keyevent.key == 'Alt') return false;
-  if (keyevent.key.charCodeAt(0) == 0xfffd) {
-    return false;
-  }
+  if (keyevent.key.charCodeAt(0) == 0xfffd) return false;
 
-  var consumed = false;
+  let consumed = false;
   if (this.inner_skk) {
     consumed = this.inner_skk.handleKeyEvent(keyevent);
   } else {
-    var keyHandler = this.modes[this.currentMode].keyHandler;
+    const keyHandler = this.modes[this.currentMode].keyHandler;
     if (keyHandler) {
       consumed = keyHandler(this, keyevent);
     }
@@ -318,41 +298,37 @@ SKK.prototype.handleKeyEvent = function (keyevent) {
 };
 
 SKK.prototype.createInnerSKK = function () {
-  var outer_skk = this;
-  var inner_skk = new SKK(this.engineID, this.dictionary);
+  const outer_skk = this;
+  const inner_skk = new SKK(this.engineID, this.dictionary);
   inner_skk.context = this.context;
   inner_skk.commit_text = '';
   inner_skk.commit_cursor = 0;
   inner_skk.commitText = function (text) {
     inner_skk.commit_text =
-      inner_skk.commit_text.slice(0, inner_skk.commit_cursor) +
+      [...inner_skk.commit_text].slice(0, inner_skk.commit_cursor).join('') +
       text +
-      inner_skk.commit_text.slice(inner_skk.commit_cursor);
-    inner_skk.commit_cursor += text.length;
+      [...inner_skk.commit_text].slice(inner_skk.commit_cursor).join('');
+    inner_skk.commit_cursor += [...text].length;
   };
 
   inner_skk.getPrefix = function () {
-    // Show ▼ followed by the input text, * and the okuri text
-    var prefix_text = '\u25bc' + outer_skk.preedit;
-    if (outer_skk.okuriText.length > 0) {
-      prefix_text += '*' + outer_skk.okuriText;
-    }
+    const prefix_text =
+      '\u25bc' + // ▼
+      outer_skk.preedit + // input text
+      (outer_skk.okuriText.length > 0 ? '*' + outer_skk.okuriText : '') +
+      '\u3010'; // 【
 
-    var cursor = outer_skk.preedit.length + 2 + inner_skk.commit_cursor;
-    if (outer_skk.okuriText.length > 0) {
-      cursor += outer_skk.okuriText.length + 1;
-    }
-    // Add 【
-    return { text: prefix_text + '\u3010' + this.commit_text, cursor: cursor };
+    const cursor = [...prefix_text].length + inner_skk.commit_cursor;
+    return { text: prefix_text + this.commit_text, cursor };
   };
 
   inner_skk.setComposition = function (text, cursor, args) {
-    var prefix = this.getPrefix();
-    if (args && args.selectionStart) {
-      args.selectionStart += prefix.text.length;
+    const prefix = this.getPrefix();
+    if (args?.selectionStart) {
+      args.selectionStart += [...prefix.text].length;
     }
-    if (args && args.selectionEnd) {
-      args.selectionEnd += prefix.text.length;
+    if (args?.selectionEnd) {
+      args.selectionEnd += [...prefix.text].length;
     }
     // Show 】 after the current composition
     outer_skk.setComposition(
@@ -362,55 +338,92 @@ SKK.prototype.createInnerSKK = function () {
     );
   };
   inner_skk.clearComposition = function () {
-    var prefix = this.getPrefix();
+    const prefix = this.getPrefix();
     outer_skk.setComposition(prefix.text + '\u3011', prefix.cursor);
   };
 
-  var original_handler = SKK.prototype.handleKeyEvent.bind(inner_skk);
+  const original_handler = SKK.prototype.handleKeyEvent.bind(inner_skk);
   inner_skk.handleKeyEvent = function (keyevent) {
-    if (original_handler(keyevent)) {
-      return true;
-    }
+    if (original_handler(keyevent)) return true;
 
-    if (keyevent.key == 'Right' || (keyevent.key == 'f' && keyevent.ctrlKey)) {
-      if (inner_skk.commit_cursor < inner_skk.commit_text.length) {
-        inner_skk.commit_cursor++;
-      }
-    } else if (
-      keyevent.key == 'Left' ||
-      (keyevent.key == 'b' && keyevent.ctrlKey)
-    ) {
-      if (inner_skk.commit_cursor > 0) {
-        inner_skk.commit_cursor--;
-      }
-    } else if (keyevent.key == 'Backspace') {
-      if (inner_skk.commit_text == '') {
-        outer_skk.finishInner(false);
-      } else if (inner_skk.commit_cursor > 0) {
-        inner_skk.commit_text =
-          inner_skk.commit_text.slice(0, inner_skk.commit_cursor - 1) +
-          inner_skk.commit_text.slice(inner_skk.commit_cursor);
-        inner_skk.commit_cursor--;
-      }
-    } else if (keyevent.key == 'Enter') {
-      outer_skk.finishInner(true);
-    } else if (
-      keyevent.key == 'Esc' ||
-      (keyevent.key == 'g' && keyevent.ctrlKey)
-    ) {
-      outer_skk.finishInner(false);
-    } else if (keyevent.key == 'y' && keyevent.ctrlKey) {
-      let readClipboardResponseHandler = (request, sender, sendResponse) => {
-        if (request.method === 'read_clipboard_response') {
-          chrome.runtime.onMessage.removeListener(readClipboardResponseHandler);
-          let response = request.body;
-          inner_skk.commitText(response.content);
-          // Need to trigger an update since this code runs asynchronously
-          inner_skk.updateComposition();
+    switch ((keyevent.ctrlKey ? 'Ctrl+' : '') + keyevent.key) {
+      case 'Right':
+      case 'Ctrl+f':
+        if (inner_skk.commit_cursor < [...inner_skk.commit_text].length) {
+          inner_skk.commit_cursor++;
         }
-      };
-      chrome.runtime.onMessage.addListener(readClipboardResponseHandler);
-      chrome.runtime.sendMessage({ method: 'read_clipboard' });
+        break;
+
+      case 'Left':
+      case 'Ctrl+b':
+        if (inner_skk.commit_cursor > 0) {
+          inner_skk.commit_cursor--;
+        }
+        break;
+
+      case 'Backspace':
+        if (inner_skk.commit_text == '') {
+          outer_skk.finishInner(false);
+        } else if (inner_skk.commit_cursor > 0) {
+          inner_skk.commit_text =
+            [...inner_skk.commit_text]
+              .slice(0, inner_skk.commit_cursor - 1)
+              .join('') +
+            [...inner_skk.commit_text].slice(inner_skk.commit_cursor).join('');
+          inner_skk.commit_cursor--;
+        }
+        break;
+
+      case 'Enter':
+        outer_skk.finishInner(true);
+        break;
+
+      case 'Esc':
+      case 'Ctrl+g':
+        outer_skk.finishInner(false);
+        break;
+
+      case 'Ctrl+y':
+        const readClipboardResponseHandler = (request) => {
+          if (request.method === 'read_clipboard_response') {
+            chrome.runtime.onMessage.removeListener(
+              readClipboardResponseHandler,
+            );
+            const response = request.body;
+            inner_skk.commitText(response.content);
+            // Need to trigger an update since this code runs asynchronously
+            inner_skk.updateComposition();
+          }
+        };
+        chrome.runtime.onMessage.addListener(readClipboardResponseHandler);
+
+        const setupOffscreenDocument = async (path) => {
+          const url = chrome.runtime.getURL(path);
+          const ctx = await chrome.runtime.getContexts({
+            contextTypes: ['OFFSCREEN_DOCUMENT'],
+            documentUrls: [url],
+          });
+          if (ctx.length > 0) return; // already have one
+          if (this.createOffscreen) {
+            await this.createOffscreen;
+          } else {
+            this.createOffscreen = chrome.offscreen.createDocument({
+              url: path,
+              reasons: ['CLIPBOARD'],
+              justification: 'Ctrl-y to paste in conversion',
+            });
+            await this.createOffscreen;
+            this.createOffscreen = null;
+          }
+        };
+        const paste = async () => {
+          await setupOffscreenDocument('offscreen.html');
+          chrome.runtime.sendMessage({
+            target: 'offscreen',
+            method: 'read_clipboard',
+          });
+        };
+        paste();
     }
 
     return true;
@@ -429,7 +442,7 @@ SKK.prototype.recordNewResult = function (entry) {
 
 SKK.prototype.finishInner = function (successfully) {
   if (successfully && this.inner_skk.commit_text.length > 0) {
-    var new_word = this.inner_skk.commit_text;
+    const new_word = this.inner_skk.commit_text;
     this.recordNewResult({ word: new_word });
 
     const numbers = this.preedit.match(/[0-9]+/g) || [];
@@ -463,59 +476,55 @@ SKK.prototype.finishInner = function (successfully) {
   }
 };
 
-SKK.prototype.showStatus = function () {
+SKK.prototype.showStatus = async function () {
   if (this.inner_skk) {
     this.inner_skk.showStatus();
     return;
   }
 
-  chrome.input.ime
-    .setCandidates({
-      contextID: this.context,
-      candidates: [
-        {
-          id: 0,
-          label: this.private ? 'private' : 'SKK',
-          candidate: this.currentMode,
-        },
-      ],
-    })
-    .then(() =>
-      chrome.input.ime
-        .setCandidateWindowProperties({
-          engineID: this.engineID,
-          properties: {
-            visible: true,
-            cursorVisible: true,
-            vertical: true,
-            pageSize: 1,
-            auxiliaryTextVisible: false,
+  try {
+    const isSet =
+      (await chrome.input.ime.setCandidates({
+        contextID: this.context,
+        candidates: [
+          {
+            id: 0,
+            label: this.private ? 'private' : 'SKK',
+            candidate: this.currentMode,
           },
-        })
-        .catch((e) => console.log(e)),
-    )
-    .then(() => {
-      chrome.input.ime
-        .setCursorPosition({
-          contextID: this.context,
-          candidateID: 0,
-        })
-        .catch((e) => console.log(e));
+        ],
+      })) &&
+      (await chrome.input.ime.setCandidateWindowProperties({
+        engineID: this.engineID,
+        properties: {
+          visible: true,
+          cursorVisible: true,
+          vertical: true,
+          pageSize: 1,
+          auxiliaryTextVisible: false,
+        },
+      })) &&
+      (await chrome.input.ime.setCursorPosition({
+        contextID: this.context,
+        candidateID: 0,
+      }));
 
+    if (isSet) {
       clearTimeout(this.timeout);
-      this.timeout = setTimeout(() => {
+      this.timeout = setTimeout(async () => {
         this.timeout = null;
-        if (!this.entries) {
-          chrome.input.ime
-            .setCandidateWindowProperties({
-              engineID: this.engineID,
-              properties: {
-                visible: false,
-              },
-            })
-            .catch((e) => console.log(e));
+        if (this.entries) return;
+        try {
+          await chrome.input.ime.setCandidateWindowProperties({
+            engineID: this.engineID,
+            properties: { visible: false },
+          });
+        } catch (e) {
+          console.log(e);
         }
-      }, 2500);
-    })
-    .catch((e) => console.log(e));
+      }, STATUS_DURATION);
+    }
+  } catch (e) {
+    console.log(e);
+  }
 };

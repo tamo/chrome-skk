@@ -1,279 +1,279 @@
-(function () {
-  function updateComposition(skk) {
-    var preedit =
+(() => {
+  const updateComposition = (skk) => {
+    const preedit =
       '\u25bd' +
-      skk.preedit.slice(0, skk.caret) +
+      [...skk.preedit].slice(0, skk.caret).join('') +
       skk.roman +
-      skk.preedit.slice(skk.caret);
-    var caret = skk.caret + skk.roman.length + 1;
+      [...skk.preedit].slice(skk.caret).join('');
+    const caret = skk.caret + skk.roman.length + 1;
     skk.setComposition(preedit, caret);
-  }
+  };
 
-  function initPreedit(skk) {
-    skk.caret = skk.preedit.length;
-  }
+  const initPreedit = (skk) => {
+    skk.caret = [...skk.preedit].length;
+  };
 
-  function preeditKeybind(skk, keyevent) {
+  const preeditKeybind = (skk, keyevent) => {
+    const key = keyevent.key;
     const nn = skk.roman == 'n' ? romanTable['nn'] : '';
 
-    if (keyevent.key == 'Enter' || (keyevent.key == 'j' && keyevent.ctrlKey)) {
-      skk.commitText(skk.preedit + nn);
-      skk.preedit = '';
-      skk.roman = '';
-      skk.switchMode(skk.previousKana);
-      return true;
-    }
-
-    if (keyevent.key == 'Esc' || (keyevent.key == 'g' && keyevent.ctrlKey)) {
-      if (skk.tabbing) {
-        skk.preedit = skk.oldPreedit;
-        skk.roman = skk.oldRoman;
-        skk.caret = skk.preedit.length;
-        skk.userComplete();
+    switch ((keyevent.ctrlKey ? 'Ctrl+' : '') + key) {
+      case 'Enter':
+      case 'Ctrl+j':
+        skk.commitText(skk.preedit + nn);
+        skk.preedit = '';
+        skk.roman = '';
+        skk.switchMode(skk.previousKana);
         return true;
-      }
-      skk.preedit = '';
-      skk.roman = '';
-      skk.switchMode(skk.previousKana);
-      return true;
-    }
 
-    if (keyevent.key == 'Tab' || (keyevent.key == 't' && keyevent.ctrlKey)) {
-      if (!skk.tabbing) {
-        skk.tabbing = 'user';
-        skk.oldPreedit = skk.preedit;
-        skk.oldRoman = skk.roman;
-        if (keyevent.shiftKey && skk.entries) {
-          skk.entries.index = skk.entries.entries.length - 1;
+      case 'Esc':
+      case 'Ctrl+g':
+        if (skk.tabbing) {
+          skk.preedit = skk.oldPreedit;
+          skk.roman = skk.oldRoman;
+          skk.caret = [...skk.preedit].length;
+          skk.userComplete();
+          return true;
         }
-      } else if (skk.entries) {
-        if (!keyevent.shiftKey) {
-          skk.entries.index++;
-        } else {
-          skk.entries.index--;
-          if (skk.entries.index < 3) {
+        skk.preedit = '';
+        skk.roman = '';
+        skk.switchMode(skk.previousKana);
+        return true;
+
+      case 'Tab':
+      case 'Ctrl+t':
+        if (!skk.tabbing) {
+          skk.tabbing = 'user';
+          skk.oldPreedit = skk.preedit;
+          skk.oldRoman = skk.roman;
+          if (keyevent.shiftKey && skk.entries) {
+            skk.entries.index = skk.entries.entries.length - 1;
+          }
+        } else if (skk.entries) {
+          if (!keyevent.shiftKey) {
+            skk.entries.index++;
+          } else {
+            skk.entries.index--;
+            if (skk.entries.index < 3) {
+              skk.entries.index = skk.entries.entries.length - 1;
+            }
+          }
+        }
+        if (!skk.entries || skk.entries.index >= skk.entries.entries.length) {
+          skk.preedit = skk.oldPreedit;
+          skk.roman = skk.oldRoman;
+          skk.caret = [...skk.preedit].length;
+          skk.systemComplete();
+          if (!skk.entries) {
+            skk.userComplete();
+            return true;
+          } else if (keyevent.shiftKey) {
             skk.entries.index = skk.entries.entries.length - 1;
           }
         }
-      }
-      if (!skk.entries || skk.entries.index >= skk.entries.entries.length) {
-        skk.preedit = skk.oldPreedit;
-        skk.roman = skk.oldRoman;
-        skk.caret = skk.preedit.length;
-        skk.systemComplete();
-        if (!skk.entries) {
+        skk.preedit = skk.entries.entries[skk.entries.index].word;
+        skk.roman = '';
+        skk.caret = [...skk.preedit].length;
+        return true;
+
+      case 'Left':
+      case 'Ctrl+b':
+        if (skk.caret > 0) {
+          skk.caret--;
+        }
+        skk.tabbing = null;
+        return true;
+
+      case 'Right':
+      case 'Ctrl+f':
+        if (skk.caret < [...skk.preedit].length) {
+          skk.caret++;
+        }
+        skk.tabbing = null;
+        return true;
+
+      case 'Backspace':
+      case 'Ctrl+h':
+        if (skk.roman.length > 0) {
+          skk.roman = skk.roman.slice(0, skk.roman.length - 1);
           skk.userComplete();
-          return true;
-        } else if (keyevent.shiftKey) {
-          skk.entries.index = skk.entries.entries.length - 1;
+        } else if ([...skk.preedit].length > 0 && skk.caret > 0) {
+          skk.preedit =
+            [...skk.preedit].slice(0, skk.caret - 1).join('') +
+            [...skk.preedit].slice(skk.caret).join('');
+          skk.caret--;
+          skk.userComplete();
+        } else {
+          if (skk.preedit.length > 0) {
+            skk.commitText(skk.preedit);
+          }
+          skk.preedit = '';
+          skk.switchMode(skk.previousKana);
         }
-      }
-      skk.preedit = skk.entries.entries[skk.entries.index].word;
-      skk.roman = '';
-      skk.caret = skk.preedit.length;
-      return true;
-    }
+        return true;
 
-    if (keyevent.key == 'Left' || (keyevent.key == 'b' && keyevent.ctrlKey)) {
-      if (skk.caret > 0) {
-        skk.caret--;
-      }
-      skk.tabbing = null;
-      return true;
-    }
-
-    if (keyevent.key == 'Right' || (keyevent.key == 'f' && keyevent.ctrlKey)) {
-      if (skk.caret < skk.preedit.length) {
-        skk.caret++;
-      }
-      skk.tabbing = null;
-      return true;
-    }
-
-    if (
-      keyevent.key == 'Backspace' ||
-      (keyevent.key == 'h' && keyevent.ctrlKey)
-    ) {
-      if (skk.roman.length > 0) {
-        skk.roman = skk.roman.slice(0, skk.roman.length - 1);
-        skk.userComplete();
-      } else if (skk.preedit.length > 0 && skk.caret > 0) {
-        skk.preedit =
-          skk.preedit.slice(0, skk.caret - 1) + skk.preedit.slice(skk.caret);
-        skk.caret--;
-        skk.userComplete();
-      } else {
-        if (skk.preedit.length > 0) {
-          skk.commitText(skk.preedit);
-        }
+      case 'q':
+        if (skk.currentMode == 'ascii-preedit') return false;
+        const kana = kanaTurnOver(skk.preedit + nn);
+        skk.commitText((keyevent.ctrlKey ? kanaHalfWidth : (c) => c)(kana));
         skk.preedit = '';
+        skk.roman = '';
         skk.switchMode(skk.previousKana);
-      }
-      return true;
-    }
+        return true;
 
-    if (keyevent.key == 'q' && skk.currentMode != 'ascii-preedit') {
-      const kana = kanaTurnOver(skk.preedit + nn);
-      skk.commitText((keyevent.ctrlKey ? kanaHalfWidth : (c) => c)(kana));
-      skk.preedit = '';
-      skk.roman = '';
-      skk.switchMode(skk.previousKana);
-      return true;
-    }
+      case 'l':
+        if (skk.currentMode == 'ascii-preedit') return false;
+        skk.commitText(skk.preedit + nn);
+        skk.preedit = '';
+        skk.roman = '';
+        skk.switchMode('ascii');
+        return true;
 
-    if (keyevent.key == 'l' && skk.currentMode != 'ascii-preedit') {
-      skk.commitText(skk.preedit + nn);
-      skk.preedit = '';
-      skk.roman = '';
-      skk.switchMode('ascii');
-      return true;
-    }
-
-    if (keyevent.key == 'L' && skk.currentMode != 'ascii-preedit') {
-      skk.commitText(skk.preedit + nn);
-      skk.preedit = '';
-      skk.roman = '';
-      skk.switchMode('full-ascii');
-      return true;
+      case 'L':
+        if (skk.currentMode == 'ascii-preedit') return false;
+        skk.commitText(skk.preedit + nn);
+        skk.preedit = '';
+        skk.roman = '';
+        skk.switchMode('full-ascii');
+        return true;
     }
 
     return false;
-  }
+  };
 
-  function preeditInput(skk, keyevent) {
-    if (keyevent.key == ' ') {
-      if (skk.roman == 'n') {
-        skk.preedit += romanTable['nn'];
-      }
-      const semicolon = skk.preedit.indexOf(';');
-      if (semicolon > 0) {
-        skk.hint = skk.preedit.slice(semicolon + 1);
-        skk.preedit = skk.preedit.slice(0, semicolon);
-      } else {
-        skk.hint = '';
-      }
-      skk.roman = '';
-      skk.switchMode('conversion');
-      return true;
-    }
+  const preeditInput = (skk, keyevent) => {
+    const key = keyevent.key;
 
-    if (preeditKeybind(skk, keyevent)) {
-      return true;
-    }
-
-    if (keyevent.key.length != 1) {
-      // special keys -- ignore for now
-      return false;
-    }
-
-    if (
-      skk.preedit.length > 0 &&
-      keyevent.shiftKey &&
-      'A' <= keyevent.key &&
-      keyevent.key <= 'Z'
-    ) {
-      var key = keyevent.key.toLowerCase();
-      var okuriPrefix = skk.roman.length > 0 ? skk.roman[0] : key;
-      skk.processRoman(key, romanTable, function (text) {
-        if (skk.roman.length > 0) {
-          skk.preedit += text;
-          skk.caret += text.length;
+    switch (true) {
+      case key == ' ':
+        if (skk.roman == 'n') {
+          skk.preedit += romanTable['nn'];
+        }
+        const semicolon = skk.preedit.indexOf(';');
+        if (semicolon > 0) {
+          skk.hint = skk.preedit.slice(semicolon + 1);
+          skk.preedit = skk.preedit.slice(0, semicolon);
         } else {
           skk.hint = '';
-          skk.okuriPrefix = okuriPrefix;
-          skk.okuriText = text;
-          skk.switchMode('conversion');
         }
-      });
-      if (skk.currentMode == 'preedit') {
-        // We should re-calculate the okuriPrefix since the 'roman' can be
-        // changed during processRoman -- such like 'KanJi' pattern.
-        skk.okuriPrefix = skk.roman.length > 0 ? skk.roman[0] : key;
-        skk.switchMode('okuri-preedit');
-      }
-      return true;
+        skk.roman = '';
+        skk.switchMode('conversion');
+        return true;
+
+      case preeditKeybind(skk, keyevent):
+        return true;
+
+      case key.length != 1:
+        // special keys -- ignore for now
+        return false;
+
+      case skk.preedit.length > 0 &&
+        keyevent.shiftKey &&
+        'A' <= key &&
+        key <= 'Z':
+        const low = key.toLowerCase();
+        const okuriPrefix = skk.roman.length > 0 ? skk.roman[0] : low;
+        skk.processRoman(low, romanTable, (text) => {
+          if (skk.roman.length > 0) {
+            skk.preedit += text;
+            skk.caret += [...text].length;
+          } else {
+            skk.hint = '';
+            skk.okuriPrefix = okuriPrefix;
+            skk.okuriText = text;
+            skk.switchMode('conversion');
+          }
+        });
+        if (skk.currentMode == 'preedit') {
+          // We should re-calculate the okuriPrefix since the 'roman' can be
+          // changed during processRoman -- such like 'KanJi' pattern.
+          skk.okuriPrefix = skk.roman.length > 0 ? skk.roman[0] : low;
+          skk.switchMode('okuri-preedit');
+        }
+        return true;
     }
 
-    var processed = skk.processRoman(
-      keyevent.key.toLowerCase(),
+    const processed = skk.processRoman(
+      key.toLowerCase(),
       romanTable,
-      function (text) {
+      (text) => {
         skk.preedit =
-          skk.preedit.slice(0, skk.caret) + text + skk.preedit.slice(skk.caret);
-        skk.caret += text.length;
+          [...skk.preedit].slice(0, skk.caret).join('') +
+          text +
+          [...skk.preedit].slice(skk.caret).join('');
+        skk.caret += [...text].length;
       },
     );
 
-    if (skk.preedit.length > 0 && keyevent.key == '>') {
+    if (skk.preedit.length > 0 && key == '>') {
       skk.roman = '';
       skk.preedit += '>';
       skk.hint = '';
       skk.switchMode('conversion');
     } else {
       if (!processed) {
-        console.log(keyevent);
         skk.preedit =
-          skk.preedit.slice(0, skk.caret) +
-          keyevent.key +
-          skk.preedit.slice(skk.caret);
-        skk.caret += keyevent.key.length;
+          [...skk.preedit].slice(0, skk.caret).join('') +
+          key +
+          [...skk.preedit].slice(skk.caret).join('');
+        skk.caret += key.length;
       }
       skk.userComplete();
     }
     return true;
-  }
+  };
 
-  function updateOkuriComposition(skk) {
-    var preedit =
+  const updateOkuriComposition = (skk) => {
+    const preedit =
       '\u25bd' +
-      skk.preedit.slice(0, skk.caret) +
+      [...skk.preedit].slice(0, skk.caret).join('') +
       '*' +
       skk.okuriText +
       skk.roman +
-      skk.preedit.slice(skk.caret);
-    var caret = skk.caret + skk.roman.length + 2;
+      [...skk.preedit].slice(skk.caret).join('');
+    const caret = skk.caret + skk.roman.length + 2;
     skk.setComposition(preedit, caret);
-  }
+  };
 
-  function okuriPreeditInput(skk, keyevent) {
-    if (keyevent.key == 'Enter' || (keyevent.key == 'j' && keyevent.ctrlKey)) {
-      skk.commitText(skk.preedit);
-      skk.preedit = '';
-      if (skk.roman == 'n') {
-        skk.commitText(romanTable['nn']);
-      }
-      skk.roman = '';
-      skk.switchMode(skk.previousKana);
-      return true;
-    }
-
-    if (keyevent.key == 'Esc' || (keyevent.key == 'g' && keyevent.ctrlKey)) {
-      skk.preedit = '';
-      skk.roman = '';
-      skk.okuriPrefix = '';
-      skk.okuriText = '';
-      skk.switchMode(skk.previousKana);
-      return true;
-    }
-
-    if (keyevent.key == 'Tab' || (keyevent.key == 't' && keyevent.ctrlKey)) {
-      return true;
-    }
-
-    if (
-      keyevent.key == 'Backspace' ||
-      (keyevent.key == 'h' && keyevent.ctrlKey)
-    ) {
-      skk.roman = skk.roman.slice(0, skk.roman.length - 1);
-      if (skk.roman.length == 0) {
-        skk.okuriPrefix = '';
+  const okuriPreeditInput = (skk, keyevent) => {
+    const key = keyevent.key;
+    switch ((keyevent.ctrlKey ? 'Ctrl+' : '') + key) {
+      case 'Enter':
+      case 'Ctrl+j':
+        skk.commitText(skk.preedit);
+        skk.preedit = '';
+        if (skk.roman == 'n') {
+          skk.commitText(romanTable['nn']);
+        }
         skk.roman = '';
-        skk.switchMode('preedit');
+        skk.switchMode(skk.previousKana);
         return true;
-      }
+
+      case 'Esc':
+      case 'Ctrl+g':
+        skk.preedit = '';
+        skk.roman = '';
+        skk.okuriPrefix = '';
+        skk.okuriText = '';
+        skk.switchMode(skk.previousKana);
+        return true;
+
+      case 'Tab':
+      case 'Ctrl+t':
+        return true;
+
+      case 'Backspace':
+      case 'Ctrl+h':
+        skk.roman = skk.roman.slice(0, skk.roman.length - 1);
+        if (skk.roman.length == 0) {
+          skk.okuriPrefix = '';
+          skk.roman = '';
+          skk.switchMode('preedit');
+          return true;
+        }
     }
 
-    skk.processRoman(keyevent.key.toLowerCase(), romanTable, function (text) {
+    skk.processRoman(key.toLowerCase(), romanTable, (text) => {
       skk.okuriText += text;
       if (skk.roman.length == 0) {
         skk.hint = '';
@@ -281,27 +281,28 @@
       }
     });
     return true;
-  }
+  };
 
-  function asciiPreeditInput(skk, keyevent) {
-    if (keyevent.key == ' ') {
-      skk.hint = '';
-      skk.switchMode('conversion');
-      return true;
+  const asciiPreeditInput = (skk, keyevent) => {
+    const key = keyevent.key;
+
+    switch (true) {
+      case key == ' ':
+        skk.hint = '';
+        skk.switchMode('conversion');
+        break;
+
+      case preeditKeybind(skk, keyevent):
+      case key.length != 1:
+        break;
+
+      default:
+        skk.preedit += key;
+        skk.caret++;
     }
 
-    if (preeditKeybind(skk, keyevent)) {
-      return true;
-    }
-
-    if (keyevent.key.length != 1) {
-      return true;
-    }
-
-    skk.preedit += keyevent.key;
-    skk.caret++;
     return true;
-  }
+  };
 
   SKK.registerImplicitMode('preedit', {
     keyHandler: preeditInput,
@@ -321,17 +322,10 @@
   });
 })();
 
-function kanaTurnOver(str) {
-  var turnedOverStr = '';
-  for (var i = 0; i < str.length; i++) {
-    var c = str.charCodeAt(i);
-    if (c > 0x3040 && c < 0x3097) {
-      turnedOverStr += String.fromCharCode(c + 0x60);
-    } else if (c > 0x30a0 && c < 0x30f7) {
-      turnedOverStr += String.fromCharCode(c - 0x60);
-    } else {
-      turnedOverStr += String.fromCharCode(c);
-    }
-  }
-  return turnedOverStr;
-}
+const kanaTurnOver = (str) =>
+  Array.from(str, (ch) => {
+    const c = ch.charCodeAt(0);
+    if (0x3040 < c && c < 0x3097) return String.fromCharCode(c + 0x60);
+    if (0x30a0 < c && c < 0x30f7) return String.fromCharCode(c - 0x60);
+    return ch;
+  }).join('');

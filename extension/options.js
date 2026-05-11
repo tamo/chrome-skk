@@ -1,41 +1,41 @@
-var compressions = [
+const compressions = [
   ['gzip', 'gz'],
   ['none', ''],
 ];
-var encodings = [
+const encodings = [
   ['EUC-JP', 'euc-jp'],
   ['UTF-8', 'utf-8'],
 ];
 
-function buildSelect(selectElement, options) {
-  for (var i = 0; i < options.length; i++) {
-    var option = document.createElement('option');
-    option.textContent = options[i][0];
-    option.value = options[i][1];
+const buildSelect = (selectElement, options) => {
+  for (const o of options) {
+    const option = document.createElement('option');
+    option.textContent = o[0];
+    option.value = o[1];
     selectElement.appendChild(option);
   }
-}
+};
 
-function onload() {
-  var form = document.getElementById('system_dictionary');
+const onload = () => {
+  const form = document.getElementById('system_dictionary');
   chrome.storage.sync.get('options', (data) => {
     console.dir({ status: 'loaded saved options', data: data });
-    if (data.options && data.options.system_dictionary) {
-      form.url.value = data.options.system_dictionary.url;
-      form.compression.value = data.options.system_dictionary.compression;
-      form.encoding.value = data.options.system_dictionary.encoding;
+    if (data.options?.system_dictionary) {
+      for (key of ['url', 'compression', 'encoding']) {
+        form[key].value = data.options.system_dictionary[key];
+      }
     }
   });
-  var url_input = form.url;
-  var compression_input = form.compression;
+  const url_input = form.url;
+  const compression_input = form.compression;
   buildSelect(compression_input, compressions);
-  var encoding_input = form.encoding;
+  const encoding_input = form.encoding;
   buildSelect(encoding_input, encodings);
 
-  var reload_button = document.getElementById('reload_button');
+  const reload_button = document.getElementById('reload_button');
 
-  document.getElementById('reload_button').onclick = function () {
-    var options = {
+  document.getElementById('reload_button').onclick = () => {
+    const options = {
       system_dictionary: {
         url: url_input.value,
         compression: compression_input.value,
@@ -44,14 +44,14 @@ function onload() {
     };
     // chrome storage API does not emit an event when the value is unchanged
     // Check the currently stored value to make sure the button is not disabled forever
-    function isEqual(obj1, obj2) {
-      var props = Object.getOwnPropertyNames(obj1);
-      var props2 = Object.getOwnPropertyNames(obj2);
-      if (props.length !== props2.length) return false;
-      for (var i = 0; i < props.length; i++)
-        if (obj1[props[i]] !== obj2[props[i]]) return false;
-      return true;
-    }
+    const isEqual = (obj1, obj2) => {
+      const keys1 = Object.keys(obj1);
+      const keys2 = Object.keys(obj2);
+      return (
+        keys1.length == keys2.length &&
+        keys1.every((key) => obj1[key] === obj2[key])
+      );
+    };
     chrome.storage.sync.get('options', (data) => {
       if (
         data.options &&
@@ -67,14 +67,14 @@ function onload() {
       reload_button.disabled = 'disabled';
     });
   };
-}
+};
 
 // request is supposed to be in {method, body} format.
-function onReceive(request, sender, sendResponse) {
+const onReceive = (request) => {
   switch (request.method) {
     case 'update_dictionary_load_status':
-      let body = request.body;
-      var div = document.getElementById('reloading_message');
+      const body = request.body;
+      const div = document.getElementById('reloading_message');
       div.innerHTML = '';
       if (body.status == 'written') {
         div.style.display = 'none';
@@ -86,23 +86,15 @@ function onReceive(request, sender, sendResponse) {
       div.appendChild(document.createTextNode(body.status));
       if (body.status == 'parsing') {
         div.appendChild(
-          document.createTextNode(': ' + body.progress + '/' + body.total),
+          document.createTextNode(`: ${body.progress}/${body.total}`),
         );
       }
       return;
-    case 'read_clipboard':
-      (async () => {
-        let text = await navigator.clipboard.readText();
-        chrome.runtime.sendMessage({
-          method: 'read_clipboard_response',
-          body: { content: text },
-        });
-      })();
-      return;
+
     default:
       console.log('Unexpected request: ' + request.method);
   }
-}
+};
 
 window.addEventListener('load', onload);
 chrome.runtime.onMessage.addListener(onReceive);

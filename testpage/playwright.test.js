@@ -14,7 +14,7 @@ test.describe('SKK Integration Tests', () => {
       if (url.pathname.endsWith('/SKK-JISYO.L.gz'))
         url.pathname = '/testpage/SKK-JISYO.L.gz';
       const response = await route.fetch({
-        url: `http://127.0.0.1:8080${url.pathname}`,
+        url: `http://localhost:8080${url.pathname}`,
       });
       await route.fulfill({ response });
     });
@@ -28,7 +28,7 @@ test.describe('SKK Integration Tests', () => {
         return;
       console.log(msg.text());
     });
-    await page.goto('http://example.com/testpage/testpage.html');
+    await page.goto('http://localhost/testpage/testpage.html');
     await page.waitForLoadState('networkidle');
   });
 
