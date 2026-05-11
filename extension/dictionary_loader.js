@@ -169,14 +169,16 @@ function Dictionary() {
       numbers.push(match);
       return '#';
     });
-    const entries = new Set();
     const userEntries = this.userDict[maskedReading] || [];
     const systemEntries = this.systemDict[maskedReading] || [];
-    for (const entry of [...userEntries, ...systemEntries]) {
+    const word_set = {};
+    const entries = [...userEntries, ...systemEntries].filter((entry) => {
       const rawWord = entry.word;
       const word = this.numberFormat(rawWord, numbers);
-      entries.add({ ...entry, rawWord, word });
-    }
+      const is_new = !word_set[word];
+      word_set[word] = true;
+      return is_new;
+    });
 
     if (entries.size == 0) return null;
     return { reading: maskedReading, data: [...entries] };
