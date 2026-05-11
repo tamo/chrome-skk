@@ -16,7 +16,7 @@ const onReceive = (request) => {
           body: { content: text },
         });
       })();
-      return true;
+      return;
 
     default:
       console.log('Unexpected request: ' + request.method);

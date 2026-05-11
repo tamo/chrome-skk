@@ -94,9 +94,9 @@
           : kanaHalfWidth(kanaTurnOver(hiragana));
     skk.commitText(text);
     skk.recordNewResult({
-      ...entry,
       word: entry.rawWord,
       rawWord: undefined,
+      ...entry, // overwrite
     });
 
     skk.clearComposition();

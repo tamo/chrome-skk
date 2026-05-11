@@ -181,7 +181,7 @@ function Dictionary() {
     });
 
     if (entries.size == 0) return null;
-    return { reading: maskedReading, data: [...entries] };
+    return { reading: maskedReading, data: entries };
   };
 
   Dictionary.prototype.recordNewResult = function (reading, newEntry) {
