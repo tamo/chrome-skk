@@ -347,5 +347,25 @@ test.describe('SKK Integration Tests', () => {
       await page.keyboard.press('Enter');
       await expect(mode(page)).toHaveValue('skk-hiragana');
     });
+
+    test('should paste emoji and move caret in innerSKK', async ({ page }) => {
+      await page.evaluate(() => navigator.clipboard.writeText('🤔'));
+      await page.keyboard.press('Shift+n');
+      await page.keyboard.press('n');
+      await page.keyboard.press('n');
+      await page.keyboard.press(' ');
+      await expect(composition(page)).toHaveText('▼んん【】');
+      await page.keyboard.press('a');
+      await page.keyboard.press('Control+y'); // paste
+      await page.keyboard.press('e');
+      await expect(composition(page)).toHaveText('▼んん【あ🤔え】');
+      await page.keyboard.press('Control+b'); // same as ArrowLeft
+      await page.keyboard.press('Control+b');
+      await page.keyboard.press('i');
+      await expect(composition(page)).toHaveText('▼んん【あい🤔え】');
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.press('u');
+      await expect(composition(page)).toHaveText('▼んん【あい🤔うえ】');
+    });
   });
 });

@@ -336,6 +336,18 @@ var chrome = {};
 
   chrome['runtime'] = {
     sendMessage: (obj, _callback) => console.log(obj.method, obj.body),
+    onMessage: {
+      // just for clipboard
+      addListener: async (callback) => {
+        const text = await navigator.clipboard.readText();
+        const response = {
+          method: 'read_clipboard_response',
+          body: { content: text },
+        };
+        callback(response);
+      },
+      removeListener: async (callback) => true,
+    },
   };
 
   var mockEngineId = 'sample';
