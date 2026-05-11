@@ -172,13 +172,16 @@ function Dictionary() {
     const userEntries = this.userDict[maskedReading] || [];
     const systemEntries = this.systemDict[maskedReading] || [];
     const word_set = {};
-    const entries = [...userEntries, ...systemEntries].filter((entry) => {
-      const rawWord = entry.word;
-      const word = this.numberFormat(rawWord, numbers);
-      const is_new = !word_set[word];
-      word_set[word] = true;
-      return is_new;
-    });
+    const entries = [...userEntries, ...systemEntries].reduce(
+      (array, entry) => {
+        const rawWord = entry.word; // for recordNewResult
+        const word = this.numberFormat(rawWord, numbers); // for commitText
+        if (!word_set[word]) array.push({ ...entry, word, rawWord });
+        word_set[word] = true;
+        return array;
+      },
+      [],
+    );
 
     if (entries.size == 0) return null;
     return { reading: maskedReading, data: entries };
