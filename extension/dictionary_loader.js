@@ -171,17 +171,14 @@ function Dictionary() {
     });
     const userEntries = this.userDict[maskedReading] || [];
     const systemEntries = this.systemDict[maskedReading] || [];
-    const word_set = {};
-    const entries = [...userEntries, ...systemEntries].reduce(
-      (array, entry) => {
-        const rawWord = entry.word; // for recordNewResult
-        const word = this.numberFormat(rawWord, numbers); // for commitText
-        if (!word_set[word]) array.push({ ...entry, word, rawWord });
-        word_set[word] = true;
-        return array;
-      },
-      [],
-    );
+    const seenWords = new Set();
+    const entries = [...userEntries, ...systemEntries].flatMap((entry) => {
+      const rawWord = entry.word; // for recordNewResult
+      if (seenWords.has(rawWord)) return [];
+      seenWords.add(rawWord);
+      const word = this.numberFormat(rawWord, numbers); // for commitText
+      return [{ ...entry, word, rawWord }];
+    });
 
     if (entries.size == 0) return null;
     return { reading: maskedReading, data: entries };
