@@ -20,6 +20,8 @@ function SKK(engineID, dictionary) {
   this.timeout = null;
   this.private = false;
   this.createOffscreen = null;
+  this.googleEntries = null;
+  this.googleIndex = 0;
 }
 
 SKK.prototype.commitText = function (text) {
@@ -411,6 +413,42 @@ SKK.prototype.createInnerSKK = function () {
           });
         };
         paste();
+        break;
+
+      case 'Ctrl+Y':
+        inner_skk.commit_text = '';
+        inner_skk.commit_cursor = 0;
+        this.googleIndex++;
+        (async () => {
+          if (!this.googleEntries?.length) {
+            this.googleIndex = 0;
+            try {
+              const query = encodeURIComponent(
+                outer_skk.preedit + outer_skk.okuriText,
+              );
+              const response = await fetch(
+                `https://inputtools.google.com/request?itc=ja-t-ja-hira-i0-und&num=19&text=${query}`,
+              );
+              if (!response.ok) return;
+              const json = await response.json();
+              if (json?.[0] != 'SUCCESS') return;
+              this.googleEntries = json[1]?.[0]?.[1];
+            } catch (e) {
+              console.error('Google Input Tools', e);
+              return;
+            }
+          }
+          const googleLength = this.googleEntries?.length;
+          if (!googleLength) return;
+          if (this.googleIndex >= googleLength) this.googleIndex = 0;
+          const entry = this.googleEntries[this.googleIndex];
+          const text =
+            outer_skk.okuriText && entry.endsWith(outer_skk.okuriText)
+              ? entry.slice(0, -outer_skk.okuriText.length)
+              : entry;
+          inner_skk.commitText(text);
+          inner_skk.updateComposition();
+        })();
     }
 
     return true;
