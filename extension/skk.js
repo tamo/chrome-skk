@@ -69,7 +69,7 @@ SKK.prototype.updateCandidates = async function () {
     }
 
     const candidates = data.entries
-      .slice(start, start + pageSize + 1)
+      .slice(start, start + pageSize)
       .map((entry, i) => ({
         candidate: entry.word,
         id: start + i,
