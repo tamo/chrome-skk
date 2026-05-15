@@ -42,75 +42,62 @@ SKK.prototype.clearComposition = function () {
   chrome.input.ime.clearComposition({ contextID: this.context });
 };
 
-SKK.prototype.updateCandidates = function () {
+SKK.prototype.updateCandidates = async function () {
   if (this.inner_skk) {
     this.inner_skk.updateCandidates();
     return;
   }
 
-  if (!this.entries) {
-    chrome.input.ime
-      .setCandidateWindowProperties({
+  try {
+    const data = this.entries;
+    if (!data) {
+      await chrome.input.ime.setCandidateWindowProperties({
         engineID: this.engineID,
-        properties: {
-          visible: false,
-        },
-      })
-      .catch((e) => console.log(e));
-    return;
-  }
-
-  const candidates = [];
-  const noList = this.entries.index <= 2;
-  const pageSize = noList ? 3 : 7;
-  const start = noList ? 0 : this.entries.index;
-  const remaining = Math.max(0, this.entries.entries.length - start - pageSize);
-  if (!this.entries.text || this.entries.text.startsWith('+ ')) {
-    this.entries.text = '+ ' + remaining;
-  }
-
-  for (let i = 0; i < pageSize; i++) {
-    if (start + i >= this.entries.entries.length) {
-      break;
+        properties: { visible: false },
+      });
+      return;
     }
-    const entry = this.entries.entries[start + i];
-    candidates.push({
-      candidate: entry.word,
-      id: start + i,
-      label: noList ? '' : this.entries.label[i],
-      annotation: entry.annotation,
-    });
-  }
 
-  chrome.input.ime
-    .setCandidates({
+    const noList = data.index <= 2;
+    const pageSize = noList ? 3 : 7;
+    const start = noList ? 0 : data.index;
+    if (!data.text || data.text.startsWith('+ ')) {
+      const remain = Math.max(0, data.entries.length - start - pageSize);
+      data.text = '+ ' + remain;
+    }
+
+    const candidates = data.entries
+      .slice(start, start + pageSize + 1)
+      .map((entry, i) => ({
+        candidate: entry.word,
+        id: start + i,
+        label: noList ? '' : data.label[i],
+        annotation: entry.annotation,
+      }));
+
+    await chrome.input.ime.setCandidates({
       contextID: this.context,
       candidates,
-    })
-    .then(() =>
-      chrome.input.ime
-        .setCandidateWindowProperties({
-          engineID: this.engineID,
-          properties: {
-            visible: true,
-            cursorVisible: true,
-            vertical: true,
-            windowPosition: 'composition',
-            pageSize,
-            auxiliaryText: this.entries.text,
-            auxiliaryTextVisible: !!this.entries.text,
-          },
-        })
-        .catch((e) => console.log(e)),
-    )
-    .then(() =>
-      chrome.input.ime
-        .setCursorPosition({
-          contextID: this.context,
-          candidateID: this.entries.index,
-        })
-        .catch((e) => console.log(e)),
-    );
+    });
+    await chrome.input.ime.setCandidateWindowProperties({
+      engineID: this.engineID,
+      properties: {
+        visible: true,
+        cursorVisible: true,
+        vertical: true,
+        windowPosition: 'composition',
+        pageSize,
+        auxiliaryText: data.text,
+        auxiliaryTextVisible: !!data.text,
+      },
+    });
+    await chrome.input.ime.setCursorPosition({
+      contextID: this.context,
+      candidateID: data.index,
+    });
+  } catch (e) {
+    console.log(e);
+  }
 };
 
 SKK.prototype.lookup = function (reading, callback) {
