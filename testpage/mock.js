@@ -119,6 +119,11 @@ var chrome = {};
     candidateWindowProperty.vertical = properties.vertical;
     candidateWindowProperty.pageSize =
       properties.pageSize || kDefaultCandidateWindowPageSize;
+    const children = [...document.getElementById('candidates').children];
+    for (const [i, candidate] of children.entries()) {
+      candidate.style.display =
+        i < candidateWindowProperty.pageSize ? '' : 'none';
+    }
     if (
       properties.auxiliaryTextVisible &&
       properties.auxiliaryText.length > 0
@@ -130,18 +135,14 @@ var chrome = {};
     } else {
       document.getElementById('aux-text').style.display = 'none';
     }
+    return true;
   }
 
   async function setCandidates(obj) {
     var candidates = obj.candidates;
     var parent = document.getElementById('candidates');
     parent.innerHTML = '';
-    for (
-      var i = 0;
-      i < candidates.length && i < candidateWindowProperty.pageSize;
-      i++
-    ) {
-      var candidate = candidates[i];
+    for (const [i, candidate] of candidates.entries()) {
       var tr = document.createElement('tr');
       tr.id = 'candidate-' + candidate.id;
       var c1 = document.createElement('td');
@@ -166,8 +167,10 @@ var chrome = {};
         var id = Number(target.id.slice('candidate-'.length));
         chrome.input.onCandidateClicked.emit(mockEngineId, id, 'left');
       };
+      tr.style.display = i < candidateWindowProperty.pageSize ? '' : 'none';
       parent.appendChild(tr);
     }
+    return true;
   }
 
   function createMenuItem(menuItem, group_name, targetDiv) {
