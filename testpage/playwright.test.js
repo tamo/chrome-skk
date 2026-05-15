@@ -5,7 +5,7 @@ test.describe('SKK Integration Tests', () => {
   const result = (page) => page.locator('#result');
   const mode = (page) =>
     page.locator('input[name="menu-item-group-1"]:checked');
-  const candidates = (page) => page.locator('#candidates');
+  //const candidates = (page) => page.locator('#candidate-window');
   const candidate = (page, i) => page.locator(`#candidate-${i}`);
 
   test.beforeEach(async ({ page }) => {
@@ -275,7 +275,7 @@ test.describe('SKK Integration Tests', () => {
   test.describe('Completion', () => {
     test('should complete on tab', async ({ page }) => {
       await page.keyboard.press('Shift+m');
-      await expect(candidates(page)).toBeHidden(); // no completion
+      await expect(candidate(page, 0)).toHaveText('SKKpreedit'); // no completion
       await page.keyboard.press('o');
       await page.keyboard.press('f');
       await page.keyboard.press('u');
@@ -288,7 +288,7 @@ test.describe('SKK Integration Tests', () => {
 
     test('should complete without tab', async ({ page }) => {
       await page.keyboard.press('Shift+m');
-      await expect(candidates(page)).toBeHidden();
+      await expect(candidate(page, 0)).toHaveText('SKKpreedit'); // no completion
       await page.keyboard.press('o');
       await page.keyboard.press('f');
       await page.keyboard.press('u');
@@ -303,7 +303,7 @@ test.describe('SKK Integration Tests', () => {
 
     test('should not complete after deleting the entry', async ({ page }) => {
       await page.keyboard.press('Shift+m');
-      await expect(candidates(page)).toBeHidden();
+      await expect(candidate(page, 0)).toHaveText('SKKpreedit'); // no completion
       await page.keyboard.press('o');
       await page.keyboard.press('f');
       await page.keyboard.press('u');
@@ -315,8 +315,11 @@ test.describe('SKK Integration Tests', () => {
       await page.keyboard.press(' ');
       await expect(composition(page)).toHaveText('▼喪服');
       await page.keyboard.press('Shift+x'); // delete
+      await expect(composition(page)).toHaveText('▽もふく');
+      await page.keyboard.press('Escape');
+      await expect(composition(page)).toBeEmpty();
       await page.keyboard.press('Shift+m');
-      await expect(candidates(page)).toBeHidden();
+      await expect(candidate(page, 0)).toHaveText('SKKpreedit'); // no completion
     });
   });
 
