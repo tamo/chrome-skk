@@ -26,6 +26,7 @@
         return true;
 
       case 'Esc':
+      case 'Escape':
       case 'Ctrl+g':
         if (skk.roman.length == 0) return false;
         skk.roman = '';

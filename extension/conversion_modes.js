@@ -50,6 +50,7 @@
         return true;
 
       case 'Esc':
+      case 'Escape':
       case 'Ctrl+g':
       case ';':
         skk.entries = null;

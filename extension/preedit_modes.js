@@ -16,6 +16,7 @@
   const preeditKeybind = (skk, keyevent) => {
     const key = keyevent.key;
     const nn = skk.roman == 'n' ? romanTable['nn'] : '';
+    let isDelete = false;
 
     switch ((keyevent.ctrlKey ? 'Ctrl+' : '') + key) {
       case 'Enter':
@@ -27,6 +28,7 @@
         return true;
 
       case 'Esc':
+      case 'Escape':
       case 'Ctrl+g':
         if (skk.tabbing) {
           skk.preedit = skk.oldPreedit;
@@ -77,6 +79,7 @@
         return true;
 
       case 'Left':
+      case 'ArrowLeft':
       case 'Ctrl+b':
         if (skk.caret > 0) {
           skk.caret--;
@@ -84,13 +87,18 @@
         skk.tabbing = null;
         return true;
 
+      case 'Delete':
+      case 'Ctrl+d':
+        isDelete = true;
+      // fall through
       case 'Right':
+      case 'ArrowRight':
       case 'Ctrl+f':
         if (skk.caret < [...skk.preedit].length) {
           skk.caret++;
-        }
+        } else if (isDelete) return true;
         skk.tabbing = null;
-        return true;
+        if (!isDelete) return true;
 
       case 'Backspace':
       case 'Ctrl+h':
@@ -250,6 +258,7 @@
         return true;
 
       case 'Esc':
+      case 'Escape':
       case 'Ctrl+g':
         skk.preedit = '';
         skk.roman = '';

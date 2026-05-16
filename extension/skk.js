@@ -256,31 +256,26 @@ SKK.prototype.updateComposition = function () {
 };
 
 SKK.prototype.handleKeyEvent = function (keyevent) {
+  const key = keyevent.key;
+
   // Do not handle modifier only keyevent.
-  // 0xFFFD hack seems not working?
-  if (keyevent.ctrlKey && keyevent.key == 'Ctrl') return false;
-  if (keyevent.altKey && keyevent.key == 'Alt') return false;
-  if (keyevent.key.charCodeAt(0) == 0xfffd) return false;
+  if (!key) return false;
+  if (keyevent.ctrlKey && (key == 'Ctrl' || key == 'Control')) return false;
+  if (keyevent.altKey && key == 'Alt') return false;
 
-  let consumed = false;
-  if (this.inner_skk) {
-    consumed = this.inner_skk.handleKeyEvent(keyevent);
-  } else {
-    const keyHandler = this.modes[this.currentMode].keyHandler;
-    if (keyHandler) {
-      consumed = keyHandler(this, keyevent);
-    }
-  }
-
-  if (this.engineID == 'sample' && !consumed && keyevent.key == 'Backspace') {
-    chrome.input.ime.deleteSurroundingText({
-      contextID: this.context,
-      engineID: this.engineID,
-      length: 1,
-      offset: -1,
-    });
-    consumed = true;
-  }
+  const consumed = this.inner_skk
+    ? this.inner_skk.handleKeyEvent(keyevent)
+    : this.modes[this.currentMode].keyHandler?.(this, keyevent) ||
+      // Hack for mock
+      (this.engineID == 'sample' &&
+        key == 'Backspace' &&
+        keyevent.type == 'keydown' &&
+        !chrome.input.ime.deleteSurroundingText({
+          contextID: this.context,
+          engineID: this.engineID,
+          length: 1,
+          offset: -1,
+        }));
   this.updateComposition();
   this.updateCandidates();
   return consumed;
@@ -335,20 +330,27 @@ SKK.prototype.createInnerSKK = function () {
   inner_skk.handleKeyEvent = function (keyevent) {
     if (original_handler(keyevent)) return true;
 
+    let isDelete = false;
     switch ((keyevent.ctrlKey ? 'Ctrl+' : '') + keyevent.key) {
-      case 'Right':
-      case 'Ctrl+f':
-        if (inner_skk.commit_cursor < [...inner_skk.commit_text].length) {
-          inner_skk.commit_cursor++;
-        }
-        break;
-
       case 'Left':
+      case 'ArrowLeft':
       case 'Ctrl+b':
         if (inner_skk.commit_cursor > 0) {
           inner_skk.commit_cursor--;
         }
         break;
+
+      case 'Delete':
+      case 'Ctrl+d':
+        isDelete = true;
+      // fall through
+      case 'Right':
+      case 'ArrowRight':
+      case 'Ctrl+f':
+        if (inner_skk.commit_cursor < [...inner_skk.commit_text].length) {
+          inner_skk.commit_cursor++;
+        } else if (isDelete) break;
+        if (!isDelete) break;
 
       case 'Backspace':
         if (inner_skk.commit_text == '') {
@@ -368,6 +370,7 @@ SKK.prototype.createInnerSKK = function () {
         break;
 
       case 'Esc':
+      case 'Escape':
       case 'Ctrl+g':
         outer_skk.finishInner(false);
         break;
