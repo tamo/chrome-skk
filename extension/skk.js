@@ -289,7 +289,8 @@ SKK.prototype.handleKeyEvent = function (keyevent) {
     ? this.inner_skk.handleKeyEvent(keyevent)
     : this.modes[this.currentMode].keyHandler?.(this, keyevent) ||
       // Hack for mock
-      (this.engineID == 'sample' &&
+      (!this.is_inner &&
+        this.engineID == 'sample' &&
         key == 'Backspace' &&
         keyevent.type == 'keydown' &&
         !chrome.input.ime.deleteSurroundingText({
@@ -306,6 +307,7 @@ SKK.prototype.handleKeyEvent = function (keyevent) {
 SKK.prototype.createInnerSKK = function () {
   const outer_skk = this;
   const inner_skk = new SKK(this.engineID, this.dictionary);
+  inner_skk.is_inner = true;
   inner_skk.context = this.context;
   inner_skk.commit_text = '';
   inner_skk.commit_cursor = 0;
