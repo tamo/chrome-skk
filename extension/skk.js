@@ -16,6 +16,7 @@ function SKK(engineID, dictionary) {
   this.okuriText = '';
   this.caret = null;
   this.entries = null;
+  this.clickListener = null;
   this.dictionary = dictionary;
   this.timeout = null;
   this.private = false;
@@ -99,6 +100,27 @@ SKK.prototype.updateCandidates = async function () {
     });
   } catch (e) {
     console.log(e);
+  }
+
+  if (!this.clickListener) {
+    this.clickListener = (engineID, candidateID, button) => {
+      if (!this.entries || button != 'left') return;
+
+      this.entries.index = candidateID;
+
+      if (this.currentMode == 'conversion') {
+        const keyHandler = this.modes[this.currentMode].keyHandler;
+        keyHandler(this, { key: 'Enter' });
+      } else {
+        this.preedit = this.entries.entries[candidateID].word;
+        this.roman = '';
+        this.caret = [...this.preedit].length;
+        this.switchMode('conversion');
+      }
+      this.updateComposition();
+      this.updateCandidates();
+    };
+    chrome.input.ime.onCandidateClicked.addListener(this.clickListener);
   }
 };
 
