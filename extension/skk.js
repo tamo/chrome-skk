@@ -63,7 +63,7 @@ SKK.prototype.updateCandidates = async function () {
 
     const noList = data.index <= 2;
     const pageSize = noList ? 3 : 7;
-    const start = noList ? 0 : data.index;
+    const start = noList ? 0 : data.index - ((data.index - 3) % 7);
     if (!data.text || data.text.startsWith('+ ')) {
       const remain = Math.max(0, data.entries.length - start - pageSize);
       data.text = '+ ' + remain;
