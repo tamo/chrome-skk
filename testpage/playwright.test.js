@@ -5,7 +5,8 @@ test.describe('SKK Integration Tests', () => {
   const result = (page) => page.locator('#result');
   const mode = (page) =>
     page.locator('input[name="menu-item-group-1"]:checked');
-  //const candidates = (page) => page.locator('#candidate-window');
+  const candidates = (page) => page.locator('#candidate-window');
+  const aux = (page) => page.locator('#aux-text');
   const candidate = (page, i) => page.locator(`#candidate-${i}`);
 
   test.beforeEach(async ({ page }) => {
@@ -82,6 +83,7 @@ test.describe('SKK Integration Tests', () => {
       await expect(composition(page)).toHaveText('▼咲く');
       await page.keyboard.press('Enter');
       await expect(result(page)).toHaveText('咲く');
+      await expect(composition(page)).toBeEmpty();
     });
 
     test('should convert "Qtan" to 単', async ({ page }) => {
@@ -140,6 +142,7 @@ test.describe('SKK Integration Tests', () => {
       await page.keyboard.press('i');
       await page.keyboard.press(' ');
       await expect(composition(page)).toHaveText('▼第１回');
+      await expect(candidate(page, 0)).toHaveText('第１回');
       await expect(candidate(page, 1)).toHaveText('第1回');
       await expect(candidate(page, 2)).toHaveText('第一回');
     });
@@ -273,7 +276,7 @@ test.describe('SKK Integration Tests', () => {
   });
 
   test.describe('Completion', () => {
-    test('should complete on tab', async ({ page }) => {
+    test('should complete on tab and make clickable', async ({ page }) => {
       await page.keyboard.press('Shift+M');
       await expect(candidate(page, 0)).toHaveText('SKKpreedit'); // no completion
       await page.keyboard.press('o');
@@ -281,9 +284,18 @@ test.describe('SKK Integration Tests', () => {
       await page.keyboard.press('u');
       await expect(composition(page)).toHaveText('▽もふ');
       await page.keyboard.press('Tab');
-      await expect(result(page)).toHaveText('');
+      await expect(result(page)).toBeEmpty();
       await expect(composition(page)).toHaveText('▽もふく'); // completed
+      await expect(aux(page)).toHaveText('system');
       await expect(candidate(page, 3)).toHaveText(' もふく'); // label is a space
+      await candidate(page, 3).click();
+      await expect(composition(page)).toHaveText('▼喪服');
+      await expect(aux(page)).toHaveText('+ 0');
+      await expect(candidate(page, 0)).toHaveText('喪服');
+      await candidate(page, 0).click();
+      await expect(result(page)).toHaveText('喪服');
+      await expect(composition(page)).toBeEmpty();
+      await expect(candidates(page)).toBeHidden();
     });
 
     test('should complete without tab', async ({ page }) => {
@@ -298,7 +310,10 @@ test.describe('SKK Integration Tests', () => {
       await page.keyboard.press('Shift+M'); // commit, record and complete
       await expect(result(page)).toHaveText('喪服');
       await expect(composition(page)).toHaveText('▽m');
-      await expect(candidate(page, 3)).toHaveText(' もふく'); // from user dictionary
+      await expect(aux(page)).toHaveText('user');
+      await expect(candidate(page, 3)).toHaveText(' もふく');
+      await page.keyboard.press('Tab');
+      await expect(composition(page)).toHaveText('▽もふく');
     });
 
     test('should not complete after deleting the entry', async ({ page }) => {
@@ -321,6 +336,28 @@ test.describe('SKK Integration Tests', () => {
       await page.keyboard.press('Shift+M');
       await expect(candidate(page, 0)).toHaveText('SKKpreedit'); // no completion
     });
+
+    test('should complete entries with a number in', async ({ page }) => {
+      await page.keyboard.press('Shift+D');
+      await page.keyboard.press('a');
+      await page.keyboard.press('i');
+      await page.keyboard.press('9');
+      await page.keyboard.press('4');
+      await page.keyboard.press('Tab');
+      await expect(aux(page)).toHaveText('system');
+      await expect(candidate(page, 3)).toHaveText(' だい94だいきゅうし');
+      await page.keyboard.press(' ');
+      await expect(composition(page)).toHaveText('▼第94大臼歯');
+      await expect(candidate(page, 0)).toHaveText('第94大臼歯');
+      await page.keyboard.press('Shift+D');
+      await expect(composition(page)).toHaveText('▽d');
+      await expect(aux(page)).toHaveText('user');
+      await expect(candidate(page, 3)).toHaveText(' だい#だいきゅうし');
+      await page.keyboard.press('Tab');
+      await expect(composition(page)).toHaveText('▽だいだいきゅうし');
+      await page.keyboard.press('8');
+      await expect(composition(page)).toHaveText('▽だい8だいきゅうし');
+    });
   });
 
   test.describe('Registration with innerSKK', () => {
@@ -337,6 +374,9 @@ test.describe('SKK Integration Tests', () => {
       await expect(mode(page)).toHaveValue('skk-ascii');
       await page.keyboard.press('y');
       await page.keyboard.press('o');
+      await page.keyboard.press('h');
+      await expect(composition(page)).toHaveText('▼よー【yoh】');
+      await page.keyboard.press('Backspace');
       await expect(composition(page)).toHaveText('▼よー【yo】');
       await page.keyboard.press('Enter');
       await expect(result(page)).toHaveText('yo');

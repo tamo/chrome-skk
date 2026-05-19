@@ -76,6 +76,14 @@
         skk.preedit = skk.entries.entries[skk.entries.index].word;
         skk.roman = '';
         skk.caret = [...skk.preedit].length;
+
+        const numIndex = skk.preedit.indexOf('#');
+        if (numIndex >= 0) {
+          skk.caret = numIndex;
+          skk.preedit =
+            [...skk.preedit].slice(0, skk.caret).join('') +
+            [...skk.preedit].slice(skk.caret + 1).join('');
+        }
         return true;
 
       case 'Left':

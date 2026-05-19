@@ -143,12 +143,24 @@ function Dictionary() {
 
   const zensuu = (d) => String.fromCharCode(d.charCodeAt(0) + 65248);
   const kansuu = (d) =>
-    ['〇', '一', '二', '三', '四', '五', '六', '七', '八', '九'][d];
+    [
+      '\u3007', // 〇
+      '\u4e00', // 一
+      '\u4e8c', // 二
+      '\u4e09', // 三
+      '\u56db', // 四
+      '\u4e94', // 五
+      '\u516d', // 六
+      '\u4e03', // 七
+      '\u516b', // 八
+      '\u4e5d', // 九
+    ][d];
   const grouping = new Intl.NumberFormat('ja-JP');
   Dictionary.prototype.numberFormat = function (rawWord, numbers) {
     let r = 0;
     const word = rawWord.replace(/#[0-8]/g, (n) => {
       const rawNumber = numbers[r++];
+      if (rawNumber == undefined) return n;
       switch (n) {
         case '#1':
           return rawNumber.split('').map(zensuu).join('');
