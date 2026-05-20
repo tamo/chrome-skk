@@ -13,7 +13,7 @@
     switch ((keyevent.ctrlKey ? 'Ctrl+' : '') + key) {
       case 'Enter':
         if (skk.roman == 'n') {
-          skk.commitText(skk.currentMode.table['nn']);
+          skk.commitText(table['nn']);
         } else if (skk.roman.length > 0) {
           skk.commitText('');
         }

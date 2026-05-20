@@ -63,6 +63,13 @@ test.describe('SKK Integration Tests', () => {
       await expect(result(page)).toHaveText('ん');
       await expect(composition(page)).toBeEmpty();
     });
+
+    test('should convert "n" + Enter to ん', async ({ page }) => {
+      await page.keyboard.press('n');
+      await page.keyboard.press('Enter');
+      await expect(result(page)).toHaveText('ん');
+      await expect(composition(page)).toBeEmpty();
+    });
   });
 
   test.describe('Kanji conversion', () => {
