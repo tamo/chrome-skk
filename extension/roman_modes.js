@@ -12,13 +12,12 @@
 
     switch ((keyevent.ctrlKey ? 'Ctrl+' : '') + key) {
       case 'Enter':
+        if (skk.roman.length == 0) return false;
         if (skk.roman == 'n') {
           skk.commitText(table['nn']);
-        } else if (skk.roman.length > 0) {
-          skk.commitText('');
         }
         skk.roman = '';
-        return false;
+        return true;
 
       case 'Backspace':
         if (skk.roman.length == 0) return false;
